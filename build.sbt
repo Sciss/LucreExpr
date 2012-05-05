@@ -1,6 +1,6 @@
 name := "LucreExpr"
 
-version := "0.10"
+version := "0.11-SNAPSHOT"
 
 organization := "de.sciss"
 

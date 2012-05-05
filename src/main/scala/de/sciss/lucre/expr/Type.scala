@@ -36,9 +36,8 @@ trait Type[ A ] {
 
    // ---- abstract ----
 
-   protected def readValue( in: DataInput ) : A
-   protected def writeValue( value: A, out: DataOutput ) : Unit
-//   protected implicit def serializer[ S <: Sys[ S ]] : TxnSerializer[ S#Tx, S#Acc, A ]
+   /* protected */ def readValue( in: DataInput ) : A
+   /* protected */ def writeValue( value: A, out: DataOutput ) : Unit
 
    // ---- public ----
 
