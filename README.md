@@ -14,7 +14,7 @@ LucreSTM builds with sbt 0.11 against Scala 2.9.2. It depends on [LucreSTM](http
 
 The following dependency is necessary:
 
-    "de.sciss" %% "lucreexpr" % "0.33"
+    "de.sciss" %% "lucreexpr" % "0.34-SNAPSHOT"
 
 ## creating an IntelliJ IDEA project
 

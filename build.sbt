@@ -1,6 +1,6 @@
 name := "LucreExpr"
 
-version := "0.33"
+version := "0.34-SNAPSHOT"
 
 organization := "de.sciss"
 
@@ -13,7 +13,7 @@ licenses := Seq( "GPL v2+" -> url( "http://www.gnu.org/licenses/gpl-2.0.txt" ))
 scalaVersion := "2.9.2"
 
 libraryDependencies ++= Seq(
-   "de.sciss" %% "lucrestm" % "0.33"
+   "de.sciss" %% "lucrestm" % "0.34-SNAPSHOT"
 )
 
 retrieveManaged := true
