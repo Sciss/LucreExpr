@@ -182,10 +182,10 @@ Usages:
 
    def expressions[ S <: Sys[ S ] with Cursor[ S ]]( tup: (S, () => Unit) ) {
       val (system, cleanUp) = tup
-      val (infra, vs, r3v) = system.step { implicit tx =>
-         val _infra = System[ S ]
-         import _infra._
-         import regions._
+      val infra = system.step { implicit tx => System[ S ]}
+      import infra._
+      import regions._
+      val (vs, r3v) = system.step { implicit tx =>
          import strings.stringOps
          import longs.longOps
          import spans.spanOps
@@ -206,10 +206,9 @@ Usages:
             case (rv, i) => new RegionView[ EventRegion ]( rv, "Region #" + (i+1) )
          }
 
-         (_infra, _vs, _rvs.last)
+         (_vs, _rvs.last)
       }
 
-      import infra._
       import event.Change
 
       val f    = frame( "Reaction Test", cleanUp )
@@ -218,7 +217,7 @@ Usages:
       cp.setLayout( new GridLayout( 3, 1 ))
 
       system.step { implicit tx =>
-         vs.foreach( _.connect() )
+         vs.foreach( _.connect() ) // { view: RegionView[ EventRegion ] => view.connect() }
          val _r3 = tx.access( r3v )
 //         _r3.renamed.react { case (_, EventRegion.Renamed( _, Change( _, newName ))) =>
 //            println( "Renamed to '" + newName + "'" )
