@@ -15,7 +15,7 @@ scalaVersion := "2.9.2"
 crossScalaVersions := Seq( "2.10.0-M6", "2.9.2" )
 
 libraryDependencies ++= Seq(
-   "de.sciss" %% "lucrestm" % "0.34-SNAPSHOT"
+   "de.sciss" %% "lucredata-core" % "0.34-SNAPSHOT"
 )
 
 retrieveManaged := true
