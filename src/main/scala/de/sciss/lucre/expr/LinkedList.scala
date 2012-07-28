@@ -23,13 +23,14 @@
  *  contact@sciss.de
  */
 
-package de.sciss.lucre.expr
+package de.sciss.lucre
+package expr
 
 import de.sciss.lucre.{event => evt}
 import evt.{Event, EventLike}
-import de.sciss.lucre.stm
 import stm.{TxnSerializer, Sys}
 import impl.{LinkedListImpl => Impl}
+import data.Iterator
 import collection.immutable.{IndexedSeq => IIdxSeq}
 
 object LinkedList {
@@ -100,7 +101,7 @@ trait LinkedList[ S <: Sys[ S ], Elem, U ] extends evt.Node[ S ] {
    def lastOption( implicit tx: S#Tx ) : Option[ Elem ]
    def head( implicit tx: S#Tx ) : Elem
    def last( implicit tx: S#Tx ) : Elem
-   def iterator( implicit tx: S#Tx ) : stm.Iterator[ S#Tx, Elem ]
+   def iterator( implicit tx: S#Tx ) : Iterator[ S#Tx, Elem ]
 
    /**
     * Note: this is an O(n) operation.
