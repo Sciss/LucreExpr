@@ -32,7 +32,7 @@ import java.awt.{BorderLayout, Color, Dimension, Graphics2D, Graphics, GridLayou
 import javax.swing.{AbstractAction, JButton, Box, JComponent, JTextField, BorderFactory, JLabel, GroupLayout, JPanel, WindowConstants, JFrame}
 import collection.mutable.Buffer
 import stm.impl.BerkeleyDB
-import stm.{Cursor, Durable, InMemory, Sys, test}
+import stm.{TxnSerializer, Cursor, Durable, InMemory, Sys, test}
 
 //import expr.any2stringadd
 
@@ -80,7 +80,8 @@ Usages:
       import regions._
       import spans.spanOps
 
-      final class RegionView[ R <: RegionLike ]( rv: S#Var[ R ], id: String ) extends JPanel {
+      final class RegionView[ R <: RegionLike ]( csrPos: S#Acc, rv: R, id: String )
+                                               ( implicit ser: TxnSerializer[ S#Tx, S#Acc, R ]) extends JPanel {
          private val lay = new GroupLayout( this )
          lay.setAutoCreateContainerGaps( true )
          setLayout( lay )
@@ -127,7 +128,7 @@ Usages:
 //               model( tx, s )
 //            }
             system.step { tx =>
-               model( tx, tx.access( rv ), s )
+               model( tx, tx.refresh( csrPos, rv ), s )
             }
          }
 
@@ -136,7 +137,7 @@ Usages:
          }
 
          def connect()( implicit tx: Tx ) {
-            connect( tx.access( rv ))
+            connect( tx.refresh( csrPos, rv ))
          }
 
          private def connect( r: R )( implicit tx: Tx ) {
@@ -185,7 +186,7 @@ Usages:
       val infra = system.step { implicit tx => System[ S ]}
       import infra._
       import regions._
-      val (vs, r3v) = system.step { implicit tx =>
+      val (vs, csrPos, r3v) = system.step { implicit tx =>
          import strings.stringOps
          import longs.longOps
          import spans.spanOps
@@ -198,15 +199,16 @@ Usages:
 //            _r1.span_#.stop_# // .max( 12000L ))
          )
          val _r3   = EventRegion( _r1.name_#.append( "+" ).append( _r2.name_# ), _span3 )
-         val rootID  = tx.newID()
-         val _rvs    = Seq( _r1, _r2, _r3 ).map( tx.newVar( rootID, _ ))
+//         val rootID  = tx.newID()
+         val _rvs    = Seq( _r1, _r2, _r3 ) // .map( tx.newVar( rootID, _ ))
 
+         val _csrPos = system.position
          val _vs = _rvs.zipWithIndex.map {
    //         case (r, i) => new RegionView( r, "Region #" + (i+1) )
-            case (rv, i) => new RegionView[ EventRegion ]( rv, "Region #" + (i+1) )
+            case (rv, i) => new RegionView[ EventRegion ]( _csrPos, rv, "Region #" + (i+1) )
          }
 
-         (_vs, _rvs.last)
+         (_vs, _csrPos, _rvs.last)
       }
 
       import event.Change
@@ -218,7 +220,7 @@ Usages:
 
       system.step { implicit tx =>
          vs.foreach( _.connect() ) // { view: RegionView[ EventRegion ] => view.connect() }
-         val _r3 = tx.access( r3v )
+         val _r3 = tx.refresh( csrPos, r3v )
 //         _r3.renamed.react { case (_, EventRegion.Renamed( _, Change( _, newName ))) =>
 //            println( "Renamed to '" + newName + "'" )
 //         }
@@ -369,14 +371,16 @@ Usages:
 
       val tr   = new TrackView
 
-      val (infra, cnt, cv) = system.step { implicit tx =>
-         val _infra = System[ S ]
-         import _infra._
+      val infra = system.step { implicit tx => System[ S ]}
+
+      val (csrPos, cnt, cv) = system.step { implicit tx =>
+         import infra._
          import regions._
          val _id  = tx.newID()
          val _cnt = tx.newIntVar( _id, 0 )
          val _coll = RegionList.empty
-         val _cv = tx.newVar( tx.newID(), _coll )
+//         val _cv = tx.newVar( tx.newID(), _coll )
+         val _csrPos = system.position
          _coll.changed.reactTx { implicit tx => {
             case RegionList.Added( _, idx, r ) =>
                val name    = r.name.value
@@ -392,7 +396,7 @@ Usages:
                val viewChanges = changes.map { c =>
                   val r = c.r
                   val ti = new TrackItem( /* r.id, */ r.name.value, r.span.value )
-                  val idx = tx.access( _cv ).indexOf( r )
+                  val idx = tx.refresh( _csrPos, _coll ).indexOf( r )
                   (idx, ti)
                }
 
@@ -400,7 +404,7 @@ Usages:
                   viewChanges.foreach { case (idx, ti) => tr.update( idx, ti )}
                }
          }}
-         (_infra, _cnt, _cv)
+         (_csrPos, _cnt, _coll)
       }
 
       import infra._
@@ -422,19 +426,19 @@ Usages:
       val actionPane = Box.createHorizontalBox()
       actionPane.add( button( "Add last" ) {
          system.step { implicit tx =>
-            val coll = tx.access( cv )
+            val coll = tx.refresh( csrPos, cv )
             coll.add( newRegion() )
          }
       })
       actionPane.add( button( "Remove first" ) {
          system.step { implicit tx =>
-            val coll = tx.access( cv )
+            val coll = tx.refresh( csrPos, cv )
             if( coll.size > 0 ) coll.removeAt( 0 )
          }
       })
       actionPane.add( button( "Random rename" ) {
          system.step { implicit tx =>
-            val coll = tx.access( cv )
+            val coll = tx.refresh( csrPos, cv )
             if( coll.size > 0 ) {
                val r    = coll.apply( rnd.nextInt( coll.size ))
                r.name   = scramble( r.name.value )
@@ -443,7 +447,7 @@ Usages:
       })
       actionPane.add( button( "Random move" ) {
          system.step { implicit tx =>
-            val coll = tx.access( cv )
+            val coll = tx.refresh( csrPos, cv )
             if( coll.size > 0 ) {
                val r       = coll.apply( rnd.nextInt( coll.size ))
                val len     = (r.span.value.length / 44100L).toInt
