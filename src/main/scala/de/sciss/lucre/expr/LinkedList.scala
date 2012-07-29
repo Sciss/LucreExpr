@@ -53,15 +53,37 @@ object LinkedList {
    extends Update[ S, Elem, U ]
 
    object Modifiable {
+      /**
+       * Returns a serializer for a modifiable list, given the provided mapping function from elements to their events.
+       */
       def serializer[ S <: Sys[ S ], Elem, U ]( eventView: Elem => EventLike[ S, U, Elem ])(
          implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) : TxnSerializer[ S#Tx, S#Acc, Modifiable[ S, Elem, U ]] =
-         Impl.modifiableSerializer[ S, Elem, U ]( eventView )
+         Impl.activeModifiableSerializer[ S, Elem, U ]( eventView )
 
+      /**
+       * Returns a serializer for a modifiable list of passive elements.
+       */
+      def serializer[ S <: Sys[ S ], Elem ]( implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ]) : TxnSerializer[ S#Tx, S#Acc, Modifiable[ S, Elem, Unit ]] =
+         Impl.passiveModifiableSerializer[ S, Elem ]
+
+      /**
+       * Creates a new empty linked list, given the provided mapping function from elements to their events.
+       */
       def apply[ S <: Sys[ S ], Elem, U ]( eventView: Elem => EventLike[ S, U, Elem ])
                                          ( implicit tx: S#Tx, elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) : Modifiable[ S, Elem, U ] =
-         Impl.newModifiable( eventView )
+         Impl.newActiveModifiable[ S, Elem, U ]( eventView )
+
+      /**
+       * Creates a new empty linked list for passive elements.
+       */
+      def apply[ S <: Sys[ S ], Elem ]( implicit tx: S#Tx, elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ]) : Modifiable[ S, Elem, Unit ] =
+         Impl.newPassiveModifiable[ S, Elem ]
    }
 
+   /**
+    * Modifiable extension of the linked list. Elements can be appended or prepended in O(1).
+    * Removal of the head or last element is O(1). Arbitrary removal takes O(N).
+    */
    trait Modifiable[ S <: Sys[ S ], Elem, U ] extends LinkedList[ S, Elem, U ] {
       def addLast( elem: Elem )( implicit tx: S#Tx ) : Unit
       def addHead( elem: Elem )( implicit tx: S#Tx ) : Unit
@@ -76,11 +98,11 @@ object LinkedList {
       type Modifiable[ S <: Sys[ S ], A ] = LinkedList.Modifiable[ S, Ex[ S, A ], evt.Change[ A ]]
 
       def serializer[ S <: Sys[ S ], A ]( implicit elemType: Type[ A ]) : TxnSerializer[ S#Tx, S#Acc, Expr[ S, A ]] =
-         Impl.serializer[ S, Ex[ S, A ], evt.Change[ A ]]( _.changed )( elemType.serializer[ S ])
+         Impl.activeSerializer[ S, Ex[ S, A ], evt.Change[ A ]]( _.changed )( elemType.serializer[ S ])
 
       object Modifiable {
          def serializer[ S <: Sys[ S ], A ]( implicit elemType: Type[ A ]) : TxnSerializer[ S#Tx, S#Acc, Expr.Modifiable[ S, A ]] =
-            Impl.modifiableSerializer[ S, Ex[ S, A ], evt.Change[ A ]]( _.changed )( elemType.serializer[ S ])
+            Impl.activeModifiableSerializer[ S, Ex[ S, A ], evt.Change[ A ]]( _.changed )( elemType.serializer[ S ])
 
          def apply[ S <: Sys[ S ], A ]( implicit tx: S#Tx, peerType: Type[ A ]) : Expr.Modifiable[ S, A ] =
             LinkedList.Modifiable[ S, Ex[ S, A ], evt.Change[ A ]]( _.changed )( tx, peerType.serializer[ S ])
@@ -90,8 +112,22 @@ object LinkedList {
 
    def serializer[ S <: Sys[ S ], Elem, U ]( eventView: Elem => EventLike[ S, U, Elem ])(
       implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) : TxnSerializer[ S#Tx, S#Acc, LinkedList[ S, Elem, U ]] =
-      Impl.serializer[ S, Elem, U ]( eventView )
+      Impl.activeSerializer[ S, Elem, U ]( eventView )
+
+   def serializer[ S <: Sys[ S ], Elem ]( implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ]) : TxnSerializer[ S#Tx, S#Acc, LinkedList[ S, Elem, Unit ]] =
+      Impl.passiveSerializer[ S, Elem ]
 }
+
+/**
+ * An observable linked list with fast `head` and `last` operations.
+ * This is the read-only layer, see `LinkedList.Modifiable` for a mutable list.
+ *
+ * The list will report insertions and deletions, as well as forward designated
+ * element events of type `U`.
+ *
+ * @tparam Elem      the element type of the list
+ * @tparam U         the updates fired by the element type
+ */
 trait LinkedList[ S <: Sys[ S ], Elem, U ] extends evt.Node[ S ] {
    def isEmpty( implicit tx: S#Tx ) : Boolean
    def nonEmpty( implicit tx: S#Tx ) : Boolean
@@ -108,9 +144,9 @@ trait LinkedList[ S <: Sys[ S ], Elem, U ] extends evt.Node[ S ] {
     */
    def indexOf( elem: Elem )( implicit tx: S#Tx ) : Int
    
-   def collectionChanged:  Event[ S, LinkedList.Collection[ S, Elem, U ], LinkedList[ S, Elem, U ]]
-   def elementChanged:     Event[ S, LinkedList.Element[    S, Elem, U ], LinkedList[ S, Elem, U ]]
-   def changed:            Event[ S, LinkedList.Update[     S, Elem, U ], LinkedList[ S, Elem, U ]]
+   def collectionChanged:  Event[     S, LinkedList.Collection[ S, Elem, U ], LinkedList[ S, Elem, U ]]
+   def elementChanged:     EventLike[ S, LinkedList.Element[    S, Elem, U ], LinkedList[ S, Elem, U ]]
+   def changed:            Event[     S, LinkedList.Update[     S, Elem, U ], LinkedList[ S, Elem, U ]]
 
    def debugList()( implicit tx: S#Tx ) : List[ Elem ]
 }
