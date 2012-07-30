@@ -303,6 +303,8 @@ object LinkedListImpl {
 //         case 2 => elementChanged
 //      }
 
+      def modifiableOption : Option[ LinkedList.Modifiable[ S, Elem, U ]] = Some( this )
+
       final def indexOf( elem: Elem )( implicit tx: S#Tx ) : Int = {
          var idx  = 0
          var rec  = headRef.get

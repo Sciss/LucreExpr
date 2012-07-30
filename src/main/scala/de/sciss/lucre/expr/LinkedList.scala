@@ -141,6 +141,8 @@ trait LinkedList[ S <: Sys[ S ], Elem, U ] extends evt.Node[ S ] {
    def last( implicit tx: S#Tx ) : Elem
    def iterator( implicit tx: S#Tx ) : Iterator[ S#Tx, Elem ]
 
+   def modifiableOption : Option[ LinkedList.Modifiable[ S, Elem, U ]]
+
    /**
     * Note: this is an O(n) operation.
     */
