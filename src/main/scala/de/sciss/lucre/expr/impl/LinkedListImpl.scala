@@ -314,6 +314,20 @@ object LinkedListImpl {
          -1
       }
 
+      final def apply( idx: Int )( implicit tx: S#Tx ) : Elem =
+         get( idx ).getOrElse( throw new IndexOutOfBoundsException( idx.toString ))
+
+      final def get( idx: Int )( implicit tx: S#Tx ) : Option[ Elem ] = {
+         if( idx < 0 ) return None
+         var left = idx
+         var rec  = headRef.get
+         while( rec != null && left > 0 ) {
+            left -= 1
+            rec = rec.succ.get
+         }
+         if( rec == null ) None else Some( rec.elem )
+      }
+
       final def addLast( elem: Elem )( implicit tx: S#Tx ) {
          val pred       = lastRef.get
          val recPred    = tx.newVar[ C ]( id, pred )

@@ -132,7 +132,9 @@ trait LinkedList[ S <: Sys[ S ], Elem, U ] extends evt.Node[ S ] {
    def isEmpty( implicit tx: S#Tx ) : Boolean
    def nonEmpty( implicit tx: S#Tx ) : Boolean
    def size( implicit tx: S#Tx ) : Int
-   
+
+   def apply( index: Int )( implicit tx: S#Tx ) : Elem
+   def get( index: Int )( implicit tx: S#Tx ) : Option[ Elem ]
    def headOption( implicit tx: S#Tx ) : Option[ Elem ]
    def lastOption( implicit tx: S#Tx ) : Option[ Elem ]
    def head( implicit tx: S#Tx ) : Elem
