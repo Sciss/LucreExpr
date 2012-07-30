@@ -31,14 +31,14 @@ import java.awt.event.{WindowAdapter, WindowEvent, ActionListener, ActionEvent}
 import java.awt.{BorderLayout, Color, Dimension, Graphics2D, Graphics, GridLayout, EventQueue}
 import javax.swing.{AbstractAction, JButton, Box, JComponent, JTextField, BorderFactory, JLabel, GroupLayout, JPanel, WindowConstants, JFrame}
 import collection.mutable.Buffer
-import stm.impl.BerkeleyDB
-import stm.{TxnSerializer, Cursor, Durable, InMemory, Sys, test}
+import stm.{TxnSerializer, Cursor, Durable, InMemory, Sys}
+import stm.impl.{BerkeleyDB, ConfluentSkel}
 
 //import expr.any2stringadd
 
 object ReactionTest2 extends App {
    private def memorySys    : (InMemory, () => Unit) = (InMemory(), () => ())
-   private def confluentSys : (test.Confluent, () => Unit) = (test.Confluent(), () => ())
+   private def confluentSys : (ConfluentSkel, () => Unit) = (ConfluentSkel(), () => ())
    private def databaseSys( name: String )  : (Durable, () => Unit) = {
       val dir  = new File( new File( sys.props( "user.home" ), "Desktop" ), "reaction" )
       val db   = BerkeleyDB.open( dir, name )
