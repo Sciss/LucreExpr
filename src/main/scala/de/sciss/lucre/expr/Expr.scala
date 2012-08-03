@@ -26,7 +26,7 @@
 package de.sciss.lucre
 package expr
 
-import stm.{Disposable, Var => _Var, Sys, Writer}
+import stm.{Disposable, Var => _Var, Sys}
 import event._
 import LucreSTM.logEvent
 
@@ -115,7 +115,7 @@ object Expr {
    }
 }
 
-trait Expr[ S <: Sys[ S ], A ] extends Writer {
+trait Expr[ S <: Sys[ S ], A ] extends Writable {
    def changed: EventLike[ S, Change[ A ], Expr[ S, A ]]
    def value( implicit tx: S#Tx ) : A
 

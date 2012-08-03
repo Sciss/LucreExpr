@@ -23,7 +23,7 @@ class Regions[ S <: Sys[ S ]]( val strings: Strings[ S ], val longs: Longs[ S ],
       def apply( name: StringEx, span: SpanEx )( implicit tx: Tx ) : Region = new New( name, span, tx )
 
       private final class New( name0: StringEx, span0: SpanEx, tx0: Tx )
-      extends RegionLike.Impl with Region {
+      extends RegionLike.Impl with Region with Mutable.Impl[ S ] {
          region =>
 
          val id      = tx0.newID()
@@ -31,7 +31,8 @@ class Regions[ S <: Sys[ S ]]( val strings: Strings[ S ], val longs: Longs[ S ],
          val span_#  = spans.NamedVar(   region.toString + ".span_#", span0 )( tx0 )
       }
 
-      private final class Read( in: DataInput, acc: S#Acc, tx0: S#Tx ) extends RegionLike.Impl with Region {
+      private final class Read( in: DataInput, acc: S#Acc, tx0: S#Tx )
+      extends RegionLike.Impl with Region with Mutable.Impl[ S ] {
          region =>
 
          val id      = tx0.readID( in, acc )
@@ -79,7 +80,7 @@ class Regions[ S <: Sys[ S ]]( val strings: Strings[ S ], val longs: Longs[ S ],
       def span_# : SpanEx
    }
 
-   trait Region extends RegionLike with Mutable[ S ] {
+   trait Region extends RegionLike with Mutable[ S#ID, S#Tx ] {
       override def toString = "Region" + id
    }
 
@@ -108,6 +109,8 @@ class Regions[ S <: Sys[ S ]]( val strings: Strings[ S ], val longs: Longs[ S ],
 //            final lazy val changed: Event[ S, Changed, EventRegion ]  = renamed | moved
 
          final lazy val changed = renamed | moved
+
+         write( null )
 
 //            final protected def sources( implicit tx: S#Tx ) = IIdxSeq( (name_#, 1 << 0), (span_#, 1 << 1) )   // OUCH XXX
          final protected def reader = serializer
@@ -318,7 +321,7 @@ class Regions[ S <: Sys[ S ]]( val strings: Strings[ S ], val longs: Longs[ S ],
       def apply[ A ]( value: A, next: Option[ LinkedList[ A ]])( implicit tx: S#Tx, peerSer: TxnSerializer[ S#Tx, S#Acc, A ]) : LinkedList[ A ] =
          new New[ A ]( value, next, tx, peerSer )
 
-      private sealed trait Impl[ A ] extends LinkedList[ A ] {
+      private sealed trait Impl[ A ] extends LinkedList[ A ] with Mutable.Impl[ S ] {
          protected def peerSer: TxnSerializer[ S#Tx, S#Acc, A ]
          final protected def writeData( out: DataOutput ) {
             peerSer.write( value, out )
@@ -353,7 +356,7 @@ class Regions[ S <: Sys[ S ]]( val strings: Strings[ S ], val longs: Longs[ S ],
          }
    }
 
-   trait LinkedList[ A ] extends Mutable[ S ] {
+   trait LinkedList[ A ] extends Mutable[ S#ID, S#Tx ] {
       def value: A
       def next_# : S#Var[ Option[ LinkedList[ A ]]]
       final def next( implicit tx: Tx ) : Option[ LinkedList[ A ]] = next_#.get
