@@ -8,13 +8,13 @@ LucreExpr is (C)opyright 2011&ndash;2012 by Hanns Holger Rutz. All rights reserv
 
 ## requirements / installation
 
-LucreSTM builds with sbt 0.11 against Scala 2.9.2. It depends on [LucreData-Core](http:/github.com/Sciss/LucreData) which should be automatically retrieved from Maven Central.
+LucreSTM builds with sbt 0.12 against Scala 2.9.2. It depends on [LucreData-Core](http:/github.com/Sciss/LucreData) which should be automatically retrieved from Maven Central.
 
 ## linking to LucreExpr
 
 The following dependency is necessary:
 
-    "de.sciss" %% "lucreexpr" % "0.34-SNAPSHOT"
+    "de.sciss" %% "lucreexpr" % "0.34"
 
 ## creating an IntelliJ IDEA project
 
