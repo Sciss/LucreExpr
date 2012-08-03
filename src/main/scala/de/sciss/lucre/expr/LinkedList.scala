@@ -28,7 +28,7 @@ package expr
 
 import de.sciss.lucre.{event => evt}
 import evt.{Event, EventLike}
-import stm.{TxnSerializer, Sys}
+import stm.{Serializer, Sys}
 import impl.{LinkedListImpl => Impl}
 import data.Iterator
 import collection.immutable.{IndexedSeq => IIdxSeq}
@@ -57,26 +57,26 @@ object LinkedList {
        * Returns a serializer for a modifiable list, given the provided mapping function from elements to their events.
        */
       def serializer[ S <: Sys[ S ], Elem, U ]( eventView: Elem => EventLike[ S, U, Elem ])(
-         implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) : TxnSerializer[ S#Tx, S#Acc, Modifiable[ S, Elem, U ]] =
+         implicit elemSerializer: Serializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) : Serializer[ S#Tx, S#Acc, Modifiable[ S, Elem, U ]] =
          Impl.activeModifiableSerializer[ S, Elem, U ]( eventView )
 
       /**
        * Returns a serializer for a modifiable list of passive elements.
        */
-      def serializer[ S <: Sys[ S ], Elem ]( implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ]) : TxnSerializer[ S#Tx, S#Acc, Modifiable[ S, Elem, Unit ]] =
+      def serializer[ S <: Sys[ S ], Elem ]( implicit elemSerializer: Serializer[ S#Tx, S#Acc, Elem ]) : Serializer[ S#Tx, S#Acc, Modifiable[ S, Elem, Unit ]] =
          Impl.passiveModifiableSerializer[ S, Elem ]
 
       /**
        * Creates a new empty linked list, given the provided mapping function from elements to their events.
        */
       def apply[ S <: Sys[ S ], Elem, U ]( eventView: Elem => EventLike[ S, U, Elem ])
-                                         ( implicit tx: S#Tx, elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) : Modifiable[ S, Elem, U ] =
+                                         ( implicit tx: S#Tx, elemSerializer: Serializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) : Modifiable[ S, Elem, U ] =
          Impl.newActiveModifiable[ S, Elem, U ]( eventView )
 
       /**
        * Creates a new empty linked list for passive elements.
        */
-      def apply[ S <: Sys[ S ], Elem ]( implicit tx: S#Tx, elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ]) : Modifiable[ S, Elem, Unit ] =
+      def apply[ S <: Sys[ S ], Elem ]( implicit tx: S#Tx, elemSerializer: Serializer[ S#Tx, S#Acc, Elem ]) : Modifiable[ S, Elem, Unit ] =
          Impl.newPassiveModifiable[ S, Elem ]
    }
 
@@ -97,11 +97,11 @@ object LinkedList {
    object Expr {
       type Modifiable[ S <: Sys[ S ], A ] = LinkedList.Modifiable[ S, Ex[ S, A ], evt.Change[ A ]]
 
-      def serializer[ S <: Sys[ S ], A ]( implicit elemType: Type[ A ]) : TxnSerializer[ S#Tx, S#Acc, Expr[ S, A ]] =
+      def serializer[ S <: Sys[ S ], A ]( implicit elemType: Type[ A ]) : Serializer[ S#Tx, S#Acc, Expr[ S, A ]] =
          Impl.activeSerializer[ S, Ex[ S, A ], evt.Change[ A ]]( _.changed )( elemType.serializer[ S ])
 
       object Modifiable {
-         def serializer[ S <: Sys[ S ], A ]( implicit elemType: Type[ A ]) : TxnSerializer[ S#Tx, S#Acc, Expr.Modifiable[ S, A ]] =
+         def serializer[ S <: Sys[ S ], A ]( implicit elemType: Type[ A ]) : Serializer[ S#Tx, S#Acc, Expr.Modifiable[ S, A ]] =
             Impl.activeModifiableSerializer[ S, Ex[ S, A ], evt.Change[ A ]]( _.changed )( elemType.serializer[ S ])
 
          def apply[ S <: Sys[ S ], A ]( implicit tx: S#Tx, peerType: Type[ A ]) : Expr.Modifiable[ S, A ] =
@@ -111,10 +111,10 @@ object LinkedList {
    type Expr[ S <: Sys[ S ], A ] = LinkedList[ S, Ex[ S, A ], evt.Change[ A ]]
 
    def serializer[ S <: Sys[ S ], Elem, U ]( eventView: Elem => EventLike[ S, U, Elem ])(
-      implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) : TxnSerializer[ S#Tx, S#Acc, LinkedList[ S, Elem, U ]] =
+      implicit elemSerializer: Serializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) : Serializer[ S#Tx, S#Acc, LinkedList[ S, Elem, U ]] =
       Impl.activeSerializer[ S, Elem, U ]( eventView )
 
-   def serializer[ S <: Sys[ S ], Elem ]( implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ]) : TxnSerializer[ S#Tx, S#Acc, LinkedList[ S, Elem, Unit ]] =
+   def serializer[ S <: Sys[ S ], Elem ]( implicit elemSerializer: Serializer[ S#Tx, S#Acc, Elem ]) : Serializer[ S#Tx, S#Acc, LinkedList[ S, Elem, Unit ]] =
       Impl.passiveSerializer[ S, Elem ]
 }
 

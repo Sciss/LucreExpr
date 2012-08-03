@@ -27,7 +27,7 @@ package de.sciss.lucre
 package expr
 
 import event.{Pull, EventLikeSerializer, Targets, Observer}
-import stm.{TxnSerializer, InMemory, Sys}
+import stm.{Serializer, InMemory, Sys}
 import expr.Expr.Var
 
 trait Type[ A ] {
@@ -73,7 +73,7 @@ trait Type[ A ] {
    implicit final def serializer[ S <: Sys[ S ]] : EventLikeSerializer[ S, Ex[ S ]] =
       anySer.asInstanceOf[ Ser[ S ]]
 
-   implicit final def varSerializer[ S <: Sys[ S ]] : TxnSerializer[ S#Tx, S#Acc, Expr.Var[ S, A ]] =
+   implicit final def varSerializer[ S <: Sys[ S ]] : Serializer[ S#Tx, S#Acc, Expr.Var[ S, A ]] =
       anyVarSer.asInstanceOf[ VarSer[ S ]]
 
    final def change[ S <: Sys[ S ]]( before: A, now: A ) : Option[ Change[ S ]] = new event.Change( before, now ).toOption
@@ -81,7 +81,7 @@ trait Type[ A ] {
    private val anySer      = new Ser[ InMemory ]
    private val anyVarSer   = new VarSer[ InMemory ]
 
-   private final class VarSer[ S <: Sys[ S ]] extends TxnSerializer[ S#Tx, S#Acc, Expr.Var[ S, A ]] {
+   private final class VarSer[ S <: Sys[ S ]] extends Serializer[ S#Tx, S#Acc, Expr.Var[ S, A ]] {
       def write( v: Expr.Var[ S, A ], out: DataOutput ) { v.write( out )}
       def read( in: DataInput, access: S#Acc )( implicit tx: S#Tx ) : Expr.Var[ S, A ] = readVar[ S ]( in, access )
    }

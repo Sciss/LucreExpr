@@ -31,7 +31,7 @@ import java.awt.event.{WindowAdapter, WindowEvent, ActionListener, ActionEvent}
 import java.awt.{BorderLayout, Color, Dimension, Graphics2D, Graphics, GridLayout, EventQueue}
 import javax.swing.{AbstractAction, JButton, Box, JComponent, JTextField, BorderFactory, JLabel, GroupLayout, JPanel, WindowConstants, JFrame}
 import collection.mutable.Buffer
-import stm.{TxnSerializer, Cursor, Durable, InMemory, Sys}
+import stm.{Serializer, Cursor, Durable, InMemory, Sys}
 import stm.impl.{BerkeleyDB, ConfluentSkel}
 
 //import expr.any2stringadd
@@ -81,7 +81,7 @@ Usages:
       import spans.spanOps
 
       final class RegionView[ R <: RegionLike ]( csrPos: S#Acc, rv: R, id: String )
-                                               ( implicit ser: TxnSerializer[ S#Tx, S#Acc, R ]) extends JPanel {
+                                               ( implicit ser: Serializer[ S#Tx, S#Acc, R ]) extends JPanel {
          private val lay = new GroupLayout( this )
          lay.setAutoCreateContainerGaps( true )
          setLayout( lay )

@@ -27,7 +27,7 @@ package de.sciss.lucre
 package expr
 package impl
 
-import stm.{TxnSerializer, Sys}
+import stm.{Serializer, Sys}
 import de.sciss.lucre.{event => evt}
 import evt.{Event, EventLike}
 import data.Iterator
@@ -41,7 +41,7 @@ object LinkedListImpl {
    private def opNotSupported : Nothing = sys.error( "Operation not supported" )
 
    def newActiveModifiable[ S <: Sys[ S ], Elem, U ]( eventView: Elem => EventLike[ S, U, Elem ])( implicit tx: S#Tx,
-      elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) : Modifiable[ S, Elem, U ] = {
+      elemSerializer: Serializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) : Modifiable[ S, Elem, U ] = {
 
       new ActiveImpl( eventView ) {
          protected val targets   = evt.Targets[ S ]
@@ -52,7 +52,7 @@ object LinkedListImpl {
    }
 
    def newPassiveModifiable[ S <: Sys[ S ], Elem ]( implicit tx: S#Tx,
-      elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ]) : Modifiable[ S, Elem, Unit ] = {
+      elemSerializer: Serializer[ S#Tx, S#Acc, Elem ]) : Modifiable[ S, Elem, Unit ] = {
 
       new PassiveImpl {
          protected val targets   = evt.Targets[ S ]
@@ -63,32 +63,32 @@ object LinkedListImpl {
    }
 
    def activeSerializer[ S <: Sys[ S ], Elem, U ]( eventView: Elem => EventLike[ S, U, Elem ])(
-      implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) :
+      implicit elemSerializer: Serializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) :
          evt.NodeSerializer[ S, LinkedList[ S, Elem, U ]] with evt.Reader[ S, LinkedList[ S, Elem, U ]] =
       new ActiveSer[ S, Elem, U ]( eventView )
 
-   def passiveSerializer[ S <: Sys[ S ], Elem ]( implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ]) :
+   def passiveSerializer[ S <: Sys[ S ], Elem ]( implicit elemSerializer: Serializer[ S#Tx, S#Acc, Elem ]) :
          evt.NodeSerializer[ S, LinkedList[ S, Elem, Unit ]] with evt.Reader[ S, LinkedList[ S, Elem, Unit ]] =
       new PassiveSer[ S, Elem ]
 
    def activeModifiableSerializer[ S <: Sys[ S ], Elem, U ]( eventView: Elem => EventLike[ S, U, Elem ])(
-      implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) :
+      implicit elemSerializer: Serializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) :
          evt.NodeSerializer[ S, Modifiable[ S, Elem, U ]] with evt.Reader[ S, Modifiable[ S, Elem, U ]] =
       new ActiveModSer[ S, Elem, U ]( eventView )
 
-   def passiveModifiableSerializer[ S <: Sys[ S ], Elem ]( implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ]) :
+   def passiveModifiableSerializer[ S <: Sys[ S ], Elem ]( implicit elemSerializer: Serializer[ S#Tx, S#Acc, Elem ]) :
          evt.NodeSerializer[ S, Modifiable[ S, Elem, Unit ]] with evt.Reader[ S, Modifiable[ S, Elem, Unit ]] =
       new PassiveModSer[ S, Elem ]
 
    private class ActiveSer[ S <: Sys[ S ], Elem, U ]( eventView: Elem => EventLike[ S, U, Elem ])
-                                              ( implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ])
+                                              ( implicit elemSerializer: Serializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ])
    extends evt.NodeSerializer[ S, LinkedList[ S, Elem, U ]] with evt.Reader[ S, LinkedList[ S, Elem, U ]] {
       def read( in: DataInput, access: S#Acc, targets: evt.Targets[ S ])( implicit tx: S#Tx ) : LinkedList[ S, Elem, U ] = {
          LinkedListImpl.activeRead( in, access, targets, eventView )
       }
    }
 
-   private class PassiveSer[ S <: Sys[ S ], Elem ]( implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ])
+   private class PassiveSer[ S <: Sys[ S ], Elem ]( implicit elemSerializer: Serializer[ S#Tx, S#Acc, Elem ])
    extends evt.NodeSerializer[ S, LinkedList[ S, Elem, Unit ]] with evt.Reader[ S, LinkedList[ S, Elem, Unit ]] {
       def read( in: DataInput, access: S#Acc, targets: evt.Targets[ S ])( implicit tx: S#Tx ) : LinkedList[ S, Elem, Unit ] = {
          LinkedListImpl.passiveRead( in, access, targets )
@@ -96,14 +96,14 @@ object LinkedListImpl {
    }
 
    private class ActiveModSer[ S <: Sys[ S ], Elem, U ]( eventView: Elem => EventLike[ S, U, Elem ])
-                                              ( implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ])
+                                              ( implicit elemSerializer: Serializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ])
    extends evt.NodeSerializer[ S, Modifiable[ S, Elem, U ]] with evt.Reader[ S, Modifiable[ S, Elem, U ]] {
       def read( in: DataInput, access: S#Acc, targets: evt.Targets[ S ])( implicit tx: S#Tx ) : Modifiable[ S, Elem, U ] = {
          LinkedListImpl.activeRead( in, access, targets, eventView )
       }
    }
 
-   private class PassiveModSer[ S <: Sys[ S ], Elem ]( implicit elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ])
+   private class PassiveModSer[ S <: Sys[ S ], Elem ]( implicit elemSerializer: Serializer[ S#Tx, S#Acc, Elem ])
    extends evt.NodeSerializer[ S, Modifiable[ S, Elem, Unit ]] with evt.Reader[ S, Modifiable[ S, Elem, Unit ]] {
       def read( in: DataInput, access: S#Acc, targets: evt.Targets[ S ])( implicit tx: S#Tx ) : Modifiable[ S, Elem, Unit ] = {
          LinkedListImpl.passiveRead( in, access, targets )
@@ -111,7 +111,7 @@ object LinkedListImpl {
    }
 
    private def activeRead[ S <: Sys[ S ], Elem, U ]( in: DataInput, access: S#Acc, _targets: evt.Targets[ S ], eventView: Elem => EventLike[ S, U, Elem ])
-                                             ( implicit tx: S#Tx, elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) : Impl[ S, Elem, U ] = {
+                                             ( implicit tx: S#Tx, elemSerializer: Serializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) : Impl[ S, Elem, U ] = {
       new ActiveImpl( eventView ) {
          protected val targets   = _targets
          protected val sizeRef   = tx.readIntVar( id, in )
@@ -121,7 +121,7 @@ object LinkedListImpl {
    }
 
    private def passiveRead[ S <: Sys[ S ], Elem ]( in: DataInput, access: S#Acc, _targets: evt.Targets[ S ])
-                                                 ( implicit tx: S#Tx, elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ]) : Impl[ S, Elem, Unit ] = {
+                                                 ( implicit tx: S#Tx, elemSerializer: Serializer[ S#Tx, S#Acc, Elem ]) : Impl[ S, Elem, Unit ] = {
       new PassiveImpl {
          protected val targets   = _targets
          protected val sizeRef   = tx.readIntVar( id, in )
@@ -146,7 +146,7 @@ object LinkedListImpl {
    }
    
    private abstract class ActiveImpl[ S <: Sys[ S ], Elem, U ]( eventView: Elem => EventLike[ S, U, Elem ])(
-      implicit protected val elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ])
+      implicit protected val elemSerializer: Serializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ])
    extends Impl[ S, Elem, U ] {
       list =>
 
@@ -190,7 +190,7 @@ object LinkedListImpl {
       }
    }
 
-   private abstract class PassiveImpl[ S <: Sys[ S ], Elem ]( implicit protected val elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ])
+   private abstract class PassiveImpl[ S <: Sys[ S ], Elem ]( implicit protected val elemSerializer: Serializer[ S#Tx, S#Acc, Elem ])
    extends Impl[ S, Elem, Unit ] {
       // Dummy.apply is a cheap method now
       final def elementChanged : EventLike[ S, LinkedList.Element[ S, Elem, Unit ], LinkedList[ S, Elem, Unit ]] = evt.Dummy.apply
@@ -212,7 +212,7 @@ object LinkedListImpl {
       protected def lastRef: S#Var[ Cell[ S, Elem ]]
       protected def sizeRef: S#Var[ Int ]
 
-      implicit protected def elemSerializer: TxnSerializer[ S#Tx, S#Acc, Elem ]
+      implicit protected def elemSerializer: Serializer[ S#Tx, S#Acc, Elem ]
       protected def registerElement(   elem: Elem )( implicit tx: S#Tx ) : Unit
       protected def unregisterElement( elem: Elem )( implicit tx: S#Tx ) : Unit
 
@@ -220,7 +220,7 @@ object LinkedListImpl {
 
       // ---- event behaviour ----
 
-      protected implicit object CellSer extends TxnSerializer[ S#Tx, S#Acc, C ] {
+      protected implicit object CellSer extends Serializer[ S#Tx, S#Acc, C ] {
          def write( cell: C, out: DataOutput ) {
             if( cell != null ) {
                out.writeUnsignedByte( 1 )
