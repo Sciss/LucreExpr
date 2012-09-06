@@ -1,6 +1,6 @@
 name := "LucreExpr"
 
-version := "0.34"
+version := "1.0.0"
 
 organization := "de.sciss"
 
@@ -12,10 +12,10 @@ licenses := Seq( "GPL v2+" -> url( "http://www.gnu.org/licenses/gpl-2.0.txt" ))
 
 scalaVersion := "2.9.2"
 
-crossScalaVersions := Seq( "2.10.0-M6", "2.9.2" )
+// crossScalaVersions := Seq( "2.10.0-M6", "2.9.2" )
 
 libraryDependencies ++= Seq(
-   "de.sciss" %% "lucredata-core" % "0.34"
+   "de.sciss" %% "lucredata-core" % "1.0.+"
 )
 
 retrieveManaged := true
@@ -27,6 +27,19 @@ testOptions in Test += Tests.Argument( "-oDF" )   // ScalaTest: durations and fu
 parallelExecution in Test := false
 
 // publishArtifact in (Compile, packageDoc) := false   // disable doc generation during development cycles
+
+// ---- build info ----
+
+buildInfoSettings
+
+sourceGenerators in Compile <+= buildInfo
+
+buildInfoKeys := Seq( name, organization, version, scalaVersion, description,
+   BuildInfoKey.map( homepage ) { case (k, opt) => k -> opt.get },
+   BuildInfoKey.map( licenses ) { case (_, Seq( (lic, _) )) => "license" -> lic }
+)
+
+buildInfoPackage := "de.sciss.lucre.expr"
 
 // ---- publishing ----
 
