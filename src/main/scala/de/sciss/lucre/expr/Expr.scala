@@ -40,6 +40,11 @@ object Expr {
       override def toString() = "Expr" + id
    }
 
+   object Var {
+      def unapply[ S <: Sys[ S ], A ]( expr: Expr[ S, A ]) : Option[ Var[ S, A ]] = {
+         if( expr.isInstanceOf[ Var[ _, _ ]]) Some( expr.asInstanceOf[ Var[ S, A ]]) else None
+      }
+   }
    trait Var[ S <: Sys[ S ], A ] extends Expr[ S, A ] with _Var[ S#Tx, Expr[ S, A ]]
    // with Invariant[ S, Change[ A ]]
    with StandaloneLike[ S, Change[ A ], Expr[ S, A ]] /* with LateBinding[ S, Change[ A ]] */
@@ -106,6 +111,14 @@ object Expr {
       }
 
       override def toString() = "Expr.Var" + id
+   }
+
+   object Const {
+      def unapply[ S <: Sys[ S ], A ]( expr: Expr[ S, A ]) : Option[ A ] = {
+         if( expr.isInstanceOf[ Const[ _, _ ]]) {
+            Some( expr.asInstanceOf[ Const[ S, A ]].constValue )
+         } else None
+      }
    }
    trait Const[ S <: Sys[ S ], A ] extends Expr[ S, A ] with event.Constant[ S ] {
       final def changed = Dummy[ S, Change[ A ], Expr[ S, A ]]
