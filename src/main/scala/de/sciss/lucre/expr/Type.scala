@@ -41,7 +41,7 @@ trait Type[ A ] {
 
    // ---- public ----
 
-   final def newConst[ S <: Sys[ S ]]( value: A ) : Ex[ S ] = new Const( value )
+   final def newConst[ S <: Sys[ S ]]( value: A ) : Expr.Const[ S, A ] = new Const( value )
 
    final def newVar[ S <: Sys[ S ]]( init: Ex[ S ])( implicit tx: S#Tx ) : Expr.Var[ S, A ] = {
       val targets = Targets.partial[ S ]
@@ -53,6 +53,12 @@ trait Type[ A ] {
       val targets = Targets[ S ]
       val ref     = tx.newVar[ Ex[ S ]]( targets.id, init )
       new Var( ref, targets )
+   }
+
+   final def readConst[ S <: Sys[ S ]]( in: DataInput ) : Expr.Const[ S, A ] = {
+      val cookie = in.readUnsignedByte()
+      require( cookie == 3, "Unexpected cookie " + cookie ) // XXX TODO cookie should be available in lucre.event
+      newConst[ S ]( readValue( in ))
    }
 
    final def readVar[ S <: Sys[ S ]]( in: DataInput, access: S#Acc )( implicit tx: S#Tx ) : Expr.Var[ S, A ] = {
