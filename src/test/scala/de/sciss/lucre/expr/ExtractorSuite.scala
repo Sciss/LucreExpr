@@ -25,7 +25,10 @@ object ExtractorSuite extends App /* TODO: FunSuite */ {
    val _other  = sys.step { implicit tx => _var.reverse }
 
    assert( identify( _const ) == IsConstant( "hallo" ))
-   assert( identify( _var ).isInstanceOf[ IsVariable[ _, _ ]])
+   assert( identify( _var   ).isInstanceOf[ IsVariable[ _, _ ]])
    assert( identify( _other ) == IsOther )
+   assert(  Expr.isConst( _const ))
+   assert( !Expr.isConst( _var   ))
+   assert( !Expr.isConst( _other ))
    println( "ExtractorSuite ok." )
 }

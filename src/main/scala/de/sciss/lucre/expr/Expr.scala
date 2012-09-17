@@ -126,6 +126,7 @@ object Expr {
       final def value( implicit tx: S#Tx ) : A = constValue
       override def toString = constValue.toString
    }
+   def isConst( expr: Expr[ _, _ ]) : Boolean = expr.isInstanceOf[ Const[ _, _ ]]
 }
 
 trait Expr[ S <: Sys[ S ], A ] extends Writable {
