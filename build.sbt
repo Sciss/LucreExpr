@@ -1,6 +1,6 @@
 name := "LucreExpr"
 
-version := "1.1.1"
+version := "1.2.0-SNAPSHOT"
 
 organization := "de.sciss"
 
@@ -15,7 +15,7 @@ scalaVersion := "2.9.2"
 // crossScalaVersions := Seq( "2.10.0-M6", "2.9.2" )
 
 libraryDependencies ++= Seq(
-   "de.sciss" %% "lucredata-core" % "1.0.+"
+   "de.sciss" %% "lucredata-core" % "1.2.0-SNAPSHOT"
 )
 
 retrieveManaged := true

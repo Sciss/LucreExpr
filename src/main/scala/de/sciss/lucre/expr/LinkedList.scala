@@ -57,7 +57,7 @@ object LinkedList {
        * Returns a serializer for a modifiable list, given the provided mapping function from elements to their events.
        */
       def serializer[ S <: Sys[ S ], Elem, U ]( eventView: Elem => EventLike[ S, U, Elem ])(
-         implicit elemSerializer: Serializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) : Serializer[ S#Tx, S#Acc, Modifiable[ S, Elem, U ]] =
+         implicit elemSerializer: evt.Serializer[ S, Elem ]) : Serializer[ S#Tx, S#Acc, Modifiable[ S, Elem, U ]] =
          Impl.activeModifiableSerializer[ S, Elem, U ]( eventView )
 
       /**
@@ -70,7 +70,7 @@ object LinkedList {
        * Creates a new empty linked list, given the provided mapping function from elements to their events.
        */
       def apply[ S <: Sys[ S ], Elem, U ]( eventView: Elem => EventLike[ S, U, Elem ])
-                                         ( implicit tx: S#Tx, elemSerializer: Serializer[ S#Tx, S#Acc, Elem ] with evt.Reader[ S, Elem ]) : Modifiable[ S, Elem, U ] =
+                                         ( implicit tx: S#Tx, elemSerializer: evt.Serializer[ S, Elem ]) : Modifiable[ S, Elem, U ] =
          Impl.newActiveModifiable[ S, Elem, U ]( eventView )
 
       /**

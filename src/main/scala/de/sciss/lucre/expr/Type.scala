@@ -266,7 +266,8 @@ trait Type[ A ] {
 
    private final case class Const[ S <: Sys[ S ]]( constValue: A ) extends Expr.Const[ S, A ] {
       def react( fun: S#Tx => Change[ S ] => Unit )( implicit tx: S#Tx ) : Observer[ S, Change[ S ], Ex[ S ]] = {
-         Observer( serializer[ S ], fun )
+//         Observer( serializer[ S ], fun )
+         Observer.dummy
       }
 
       protected def writeData( out: DataOutput ) {
