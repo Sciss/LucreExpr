@@ -6,15 +6,15 @@ LucreExpr is a library for the Scala programming language which provides an expr
 
 LucreExpr is (C)opyright 2011&ndash;2012 by Hanns Holger Rutz. All rights reserved. It is released under the [GNU General Public License](https://raw.github.com/Sciss/LucreExpr/master/licenses/LucreExpr-License.txt) and comes with absolutely no warranties. To contact the author, send an email to `contact at sciss.de`
 
-## requirements / installation
+## building
 
 LucreSTM builds with sbt 0.12 against Scala 2.9.2. It depends on [LucreData-Core](http:/github.com/Sciss/LucreData) which should be automatically retrieved from Maven Central.
 
-## linking to LucreExpr
+## linking
 
 The following dependency is necessary:
 
-    "de.sciss" %% "lucreexpr" % "1.1.1+"
+    "de.sciss" %% "lucreexpr" % "1.2.+"
 
 ## creating an IntelliJ IDEA project
 

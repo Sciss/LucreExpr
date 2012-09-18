@@ -31,7 +31,8 @@ import stm.{Serializer, InMemory, Sys}
 import expr.Expr.Var
 
 trait Type[ A ] {
-   final protected type Ex[ S <: Sys[ S ]] = Expr[ S, A ]
+   final protected type Ex[  S <: Sys[ S ]] = Expr[ S, A ]
+   final protected type ExN[ S <: Sys[ S ]] = Expr[ S, A ] with event.Node[ S ]
    final protected type Change[ S <: Sys[ S ]] = event.Change[ A ]
 
    // ---- abstract ----
@@ -93,7 +94,7 @@ trait Type[ A ] {
    }
 
    private final class Ser[ S <: Sys[ S ]] extends EventLikeSerializer[ S, Ex[ S ]] {
-      def read( in: DataInput, access: S#Acc, targets: Targets[ S ])( implicit tx: S#Tx ) : Ex[ S ] with event.Node[ S ] = {
+      def read( in: DataInput, access: S#Acc, targets: Targets[ S ])( implicit tx: S#Tx ) : ExN[ S ] = {
          // 0 = var, 1 = op
          (in.readUnsignedByte() /*: @switch */) match {
             case 0 =>
@@ -119,7 +120,7 @@ trait Type[ A ] {
    }
 
    protected def readTuple[ S <: Sys[ S ]]( cookie: Int, in: DataInput, access: S#Acc, targets: Targets[ S ])
-                                          ( implicit tx: S#Tx ) : Ex[ S ] with event.Node[ S ]
+                                          ( implicit tx: S#Tx ) : ExN[ S ]
 
    /* protected */ sealed trait TupleOp /* extends event.Reader[ S, Ex ] */ {
       def id: Int
