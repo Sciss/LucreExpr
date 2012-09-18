@@ -30,9 +30,9 @@ import java.io.File
 import java.awt.event.{WindowAdapter, WindowEvent, ActionListener, ActionEvent}
 import java.awt.{BorderLayout, Color, Dimension, Graphics2D, Graphics, GridLayout, EventQueue}
 import javax.swing.{AbstractAction, JButton, Box, JComponent, JTextField, BorderFactory, JLabel, GroupLayout, JPanel, WindowConstants, JFrame}
-import collection.mutable.Buffer
 import stm.{Serializer, Cursor, Durable, InMemory, Sys}
 import stm.impl.{BerkeleyDB, ConfluentSkel}
+import collection.mutable
 
 //import expr.any2stringadd
 
@@ -211,8 +211,6 @@ Usages:
          (_vs, _csrPos, _rvs.last)
       }
 
-      import event.Change
-
       val f    = frame( "Reaction Test", cleanUp )
       val cp   = f.getContentPane
 
@@ -235,7 +233,7 @@ Usages:
    case class TrackItem( /* id: Any, */ name: String, span: Span )
 
    class TrackView extends JComponent {
-      private val items = Buffer.empty[ TrackItem ]
+      private val items = mutable.Buffer.empty[ TrackItem ]
 //      private var map = Map.empty[ Any, TrackItem ]
       private val colrRegion = new Color( 0x00, 0x00, 0x00, 0x80 )
 
@@ -381,7 +379,7 @@ Usages:
          val _coll = RegionList.empty
 //         val _cv = tx.newVar( tx.newID(), _coll )
          val _csrPos = system.position
-         _coll.changed.reactTx { implicit tx => {
+         _coll.changed.reactTx[ RegionList.Update ] { implicit tx => {
             case RegionList.Added( _, idx, r ) =>
                val name    = r.name.value
                val span    = r.span.value

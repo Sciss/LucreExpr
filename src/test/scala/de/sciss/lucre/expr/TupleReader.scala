@@ -2,9 +2,9 @@ package de.sciss.lucre
 package expr
 
 import stm.Sys
-import event.Targets
+import event.{Targets, Node}
 
 trait TupleReader[ S <: Sys[ S ], A ] {
    def readTuple( arity: Int, opID: Int, in: DataInput, access: S#Acc, targets: Targets[ S ])
-                ( implicit tx: S#Tx ) : Expr[ S, A ]
+                ( implicit tx: S#Tx ) : Expr[ S, A ] with Node[ S ]
 }

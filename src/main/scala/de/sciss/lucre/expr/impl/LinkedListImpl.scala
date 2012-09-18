@@ -166,15 +166,15 @@ object LinkedListImpl {
       with evt.InvariantEvent[ S, LinkedList.Element[ S, Elem, U ], LinkedList[ S, Elem, U ]] {
          protected def reader : evt.Reader[ S, LinkedList[ S, Elem, U ]] = activeSerializer( eventView )
          def slot: Int = 2
-         def node: evt.Node[ S ] = list
+         def node: LinkedList[ S, Elem, U ] = list
 
          def connect()( implicit tx: S#Tx ) {}
          def disconnect()( implicit tx: S#Tx ) {}
 
          def pullUpdate( pull: evt.Pull[ S ])( implicit tx: S#Tx ) : Option[ LinkedList.Element[ S, Elem, U ]] = {
             val changes: IIdxSeq[ (Elem, U)] = pull.parents( this ).flatMap( sel => {
-               val evt = sel.devirtualize[ Event[ S, U, Elem ]]( elemSerializer )
-               evt.pullUpdate( pull ).map( elem -> _ ) // u => LinkedList.Element( list, elem, u ))
+               val evt = sel.devirtualize[ U, Elem ]( elemSerializer )
+               evt.pullUpdate( pull ).map( evt.node -> _ ) // u => LinkedList.Element( list, elem, u ))
             })( breakOut )
 
             if( changes.isEmpty ) None else Some( LinkedList.Element( list, changes ))
@@ -254,7 +254,7 @@ object LinkedListImpl {
       {
          protected def reader = list.reader
          def slot: Int = 1
-         def node: evt.Node[ S ] = list
+         def node: LinkedList[ S, Elem, U ] = list
       }
 
       private object ChangeEvent
@@ -262,39 +262,39 @@ object LinkedListImpl {
       with evt.InvariantSelector[ S ] {
          protected def reader : evt.Reader[ S, LinkedList[ S, Elem, U ]] = list.reader
          def slot: Int = opNotSupported
-         def node: evt.Node[ S ] = list
+         def node: LinkedList[ S, Elem, U ] = list
 
          def connect()( implicit tx: S#Tx ) {}
          def disconnect()( implicit tx: S#Tx ) {}
 
-         private[lucre] def --->( r: evt.Selector[ S ])( implicit tx: S#Tx ) {
+         def --->( r: evt.Selector[ S ])( implicit tx: S#Tx ) {
             CollectionEvent ---> r
             elementChanged    ---> r
          }
-         private[lucre] def -/->( r: evt.Selector[ S ])( implicit tx: S#Tx ) {
+         def -/->( r: evt.Selector[ S ])( implicit tx: S#Tx ) {
             CollectionEvent -/-> r
             elementChanged    -/-> r
          }
 
-         private[lucre] def pullUpdate( pull: evt.Pull[ S ])( implicit tx: S#Tx ) : Option[ LinkedList.Update[ S, Elem, U ]] = {
+         def pullUpdate( pull: evt.Pull[ S ])( implicit tx: S#Tx ) : Option[ LinkedList.Update[ S, Elem, U ]] = {
             if(   CollectionEvent.isSource( pull )) CollectionEvent.pullUpdate( pull )
             else if( elementChanged.isSource( pull )) elementChanged.pullUpdate(    pull )
             else None
          }
 
-         def react( fun: LinkedList.Update[ S, Elem, U ] => Unit )
-                  ( implicit tx: S#Tx ) : evt.Observer[ S, LinkedList.Update[ S, Elem, U ], LinkedList[ S, Elem, U ]] =
+         def react[ A1 >: LinkedList.Update[ S, Elem, U ]]( fun: A1 => Unit )
+                  ( implicit tx: S#Tx ) : evt.Observer[ S, A1, LinkedList[ S, Elem, U ]] =
             reactTx( (_: S#Tx) => fun )
 
-         def reactTx( fun: S#Tx => LinkedList.Update[ S, Elem, U ] => Unit )
-                    ( implicit tx: S#Tx ) : evt.Observer[ S, LinkedList.Update[ S, Elem, U ], LinkedList[ S, Elem, U ]] = {
+         def reactTx[ A1 >: LinkedList.Update[ S, Elem, U ]]( fun: S#Tx => A1 => Unit )
+                    ( implicit tx: S#Tx ) : evt.Observer[ S, A1, LinkedList[ S, Elem, U ]] = {
             val obs = evt.Observer( list.reader /* activeSerializer( eventView ) */, fun )
             obs.add( CollectionEvent )
             obs.add( elementChanged )
             obs
          }
 
-         private[lucre] def isSource( pull: evt.Pull[ S ]) : Boolean = opNotSupported
+         def isSource( pull: evt.Pull[ S ]) : Boolean = opNotSupported
       }
 
 //      final /* private[event] */ def select( slot: Int, invariant: Boolean ) : evt.NodeSelector[ S, _ ] = (slot: @switch) match {

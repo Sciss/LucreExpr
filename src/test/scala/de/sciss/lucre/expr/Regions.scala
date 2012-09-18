@@ -110,8 +110,6 @@ class Regions[ S <: Sys[ S ]]( val strings: Strings[ S ], val longs: Longs[ S ],
 
          final lazy val changed = renamed | moved
 
-         write( null )
-
 //            final protected def sources( implicit tx: S#Tx ) = IIdxSeq( (name_#, 1 << 0), (span_#, 1 << 1) )   // OUCH XXX
          final protected def reader = serializer
          final protected def decl   = EventRegion
@@ -138,7 +136,7 @@ class Regions[ S <: Sys[ S ]]( val strings: Strings[ S ], val longs: Longs[ S ],
       }
    }
    trait EventRegion extends RegionLike
-   with Compound[ S, EventRegion, EventRegion.type ] {
+   with Compound[ S, EventRegion.type, EventRegion ] {
       import EventRegion._
 
       def renamed: Event[ S, Renamed, EventRegion ]
@@ -291,7 +289,7 @@ class Regions[ S <: Sys[ S ]]( val strings: Strings[ S ], val longs: Longs[ S ],
    }
 
    trait RegionList extends // InvariantNode[ S, RegionList.Update ] with
-   Compound[ S, RegionList, RegionList.type ] {
+   Compound[ S, RegionList.type, RegionList ] {
       import RegionList._
 
       protected type Elem  = EventRegion

@@ -63,7 +63,7 @@ Usage:
             sorted.toList
 
             println( "\nNow observed..." )
-            sorted.changed.reactTx { implicit tx => {
+            sorted.changed.reactTx[ Sorted.Update ] { implicit tx => {
                case Sorted.Added(   _, region ) => println( "Added: " + region.name.value + " @ " + region.span.value )
                case Sorted.Removed( _, region ) => println( "Removed: " + region.name.value + " @ " + region.span.value )
                case Sorted.Element( _, chs )    => chs.foreach( ch => println( "Changed: " + ch ))
@@ -209,7 +209,7 @@ println( "ADD" )
       }
    }
 
-   trait Sorted extends Compound[ S, Sorted, Sorted.type ] {
+   trait Sorted extends Compound[ S, Sorted.type, Sorted ] {
       import Sorted._
       def collectionChanged:  Ev[ Collection ]
       def elementChanged:     Ev[ Element ]

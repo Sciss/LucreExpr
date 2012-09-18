@@ -93,7 +93,7 @@ trait Type[ A ] {
    }
 
    private final class Ser[ S <: Sys[ S ]] extends EventLikeSerializer[ S, Ex[ S ]] {
-      def read( in: DataInput, access: S#Acc, targets: Targets[ S ])( implicit tx: S#Tx ) : Ex[ S ] = {
+      def read( in: DataInput, access: S#Acc, targets: Targets[ S ])( implicit tx: S#Tx ) : Ex[ S ] with event.Node[ S ] = {
          // 0 = var, 1 = op
          (in.readUnsignedByte() /*: @switch */) match {
             case 0 =>
@@ -119,7 +119,7 @@ trait Type[ A ] {
    }
 
    protected def readTuple[ S <: Sys[ S ]]( cookie: Int, in: DataInput, access: S#Acc, targets: Targets[ S ])
-                                          ( implicit tx: S#Tx ) : Ex[ S ]
+                                          ( implicit tx: S#Tx ) : Ex[ S ] with event.Node[ S ]
 
    /* protected */ sealed trait TupleOp /* extends event.Reader[ S, Ex ] */ {
       def id: Int
@@ -167,7 +167,7 @@ trait Type[ A ] {
 //         }
 //      }
 
-      private[lucre] def pullUpdate( pull: Pull[ S ])( implicit tx: S#Tx ) : Option[ Change[ S ]] = {
+      def pullUpdate( pull: Pull[ S ])( implicit tx: S#Tx ) : Option[ Change[ S ]] = {
          _1.changed.pullUpdate( pull ).flatMap { ach =>
             change( op.value( ach.before ), op.value( ach.now ))
          }
@@ -230,7 +230,7 @@ trait Type[ A ] {
 //         }
 //      }
 
-      private[lucre] def pullUpdate( pull: Pull[ S ])( implicit tx: S#Tx ) : Option[ Change[ S ]] = {
+      def pullUpdate( pull: Pull[ S ])( implicit tx: S#Tx ) : Option[ Change[ S ]] = {
 //         val sources = pull.parents( select() )
          val _1c = _1.changed
          val _2c = _2.changed
@@ -276,7 +276,7 @@ trait Type[ A ] {
    }
 
    private final class Var[ S <: Sys[ S ]]( protected val ref: S#Var[ Ex[ S ]], protected val targets: Targets[ S ])
-   extends Expr.Var[ S, A ] {
+   extends impl.VarImpl[ S, A ] {
       def reader : event.Reader[ S, Ex[ S ]] = serializer[ S ]
    }
 }
