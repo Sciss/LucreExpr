@@ -247,7 +247,7 @@ object LinkedListImpl {
       protected def reader: evt.Reader[ S, LinkedList[ S, Elem, U ]]
 
       protected object CollectionEvent
-      extends evt.Trigger.Impl[ S, LinkedList.Collection[ S, Elem, U ], LinkedList.Collection[ S, Elem, U ], LinkedList[ S, Elem, U ]]
+      extends evt.Trigger.Impl[ S, LinkedList.Collection[ S, Elem, U ], LinkedList[ S, Elem, U ]]
       with evt.EventImpl[ S, LinkedList.Collection[ S, Elem, U ], LinkedList[ S, Elem, U ]]
       with evt.InvariantEvent[ S, LinkedList.Collection[ S, Elem, U ], LinkedList[ S, Elem, U ]]
       with evt.Root[ S, LinkedList.Collection[ S, Elem, U ]]

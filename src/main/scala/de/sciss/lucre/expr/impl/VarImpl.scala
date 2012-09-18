@@ -8,7 +8,7 @@ import event.{Pull, Event, InvariantSelector, Generator, Change, StandaloneLike}
 
 trait VarImpl[ S <: Sys[ S ], A ] extends Expr.Var[ S, A ]
 with StandaloneLike[ S, Change[ A ], Expr[ S, A ]] /* with LateBinding[ S, Change[ A ]] */
-with Generator[ S, Change[ A ], Change[ A ], Expr[ S, A ]] with InvariantSelector[ S ] {
+with Generator[ S, Change[ A ], Expr[ S, A ]] with InvariantSelector[ S ] {
    expr =>
 
    private type Ex = Expr[ S, A ]
