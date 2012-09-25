@@ -28,7 +28,6 @@ package expr
 
 import de.sciss.lucre.{event => evt}
 import stm.Serializer
-import evt.{impl => evti}
 
 trait Type[ A ] {
    final protected type Ex[  S <: stm.Sys[ S ]] = Expr[ S, A ]
@@ -42,7 +41,7 @@ trait Type[ A ] {
 
    // ---- public ----
 
-   final def newConst[ S <: evt.Sys[ S ]]( value: A ) : Expr.Const[ S, A ] = new Const( value )
+   final def newConst[ S <: stm.Sys[ S ]]( value: A ) : Expr.Const[ S, A ] = new Const( value )
 
    final def newVar[ S <: evt.Sys[ S ]]( init: Ex[ S ])( implicit tx: S#Tx ) : Expr.Var[ S, A ] = {
       val targets = evt.Targets.partial[ S ]
@@ -56,7 +55,7 @@ trait Type[ A ] {
       new Var( ref, targets )
    }
 
-   final def readConst[ S <: evt.Sys[ S ]]( in: DataInput ) : Expr.Const[ S, A ] = {
+   final def readConst[ S <: stm.Sys[ S ]]( in: DataInput ) : Expr.Const[ S, A ] = {
       val cookie = in.readUnsignedByte()
       require( cookie == 3, "Unexpected cookie " + cookie ) // XXX TODO cookie should be available in lucre.event
       newConst[ S ]( readValue( in ))
@@ -265,7 +264,7 @@ trait Type[ A ] {
 
    // ---- private ----
 
-   private final case class Const[ S <: evt.Sys[ S ]]( constValue: A ) extends expr.impl.ConstImpl[ S, A ] {
+   private final case class Const[ S <: stm.Sys[ S ]]( constValue: A ) extends expr.impl.ConstImpl[ S, A ] {
       def react( fun: S#Tx => Change[ S ] => Unit )( implicit tx: S#Tx ) : evt.Observer[ S, Change[ S ], Ex[ S ]] = {
 //         Observer( serializer[ S ], fun )
          evt.Observer.dummy

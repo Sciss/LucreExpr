@@ -27,7 +27,7 @@ package de.sciss.lucre
 package expr
 
 import stm.{Disposable, Var => _Var, Sys}
-import event.{impl => eimpl, EventLike, Dummy, Event, Change}
+import event.{EventLike, Dummy, Event, Change}
 
 object Expr {
    trait Node[ S <: Sys[ S ], A ] extends Expr[ S, A ] with event.Node[ S ] {
