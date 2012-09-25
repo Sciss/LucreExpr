@@ -1,12 +1,13 @@
 package de.sciss.lucre
 package expr
 
-import stm.{Serializer, Mutable, Sys}
+import stm.{Serializer, Mutable}
 import annotation.tailrec
 import collection.immutable.{IndexedSeq => IIdxSeq}
-import event.{Targets, NodeSerializer, Event, Compound, Decl}
+import de.sciss.lucre.{event => evt}
+import evt.{Targets, NodeSerializer, Event, Compound, Decl}
 
-class Regions[ S <: Sys[ S ]]( val strings: Strings[ S ], val longs: Longs[ S ], val spans: Spans[ S ]) {
+class Regions[ S <: evt.Sys[ S ]]( val strings: Strings[ S ], val longs: Longs[ S ], val spans: Spans[ S ]) {
    type Tx  = S#Tx
    type Acc = S#Acc
 

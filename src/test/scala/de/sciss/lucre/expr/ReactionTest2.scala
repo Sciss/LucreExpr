@@ -30,29 +30,30 @@ import java.io.File
 import java.awt.event.{WindowAdapter, WindowEvent, ActionListener, ActionEvent}
 import java.awt.{BorderLayout, Color, Dimension, Graphics2D, Graphics, GridLayout, EventQueue}
 import javax.swing.{AbstractAction, JButton, Box, JComponent, JTextField, BorderFactory, JLabel, GroupLayout, JPanel, WindowConstants, JFrame}
-import stm.{Serializer, Cursor, Durable, InMemory, Sys}
+import de.sciss.lucre.{event => evt}
+import stm.{Serializer, Cursor}
 import stm.impl.{BerkeleyDB, ConfluentSkel}
 import collection.mutable
 
 //import expr.any2stringadd
 
 object ReactionTest2 extends App {
-   private def memorySys    : (InMemory, () => Unit) = (InMemory(), () => ())
-   private def confluentSys : (ConfluentSkel, () => Unit) = (ConfluentSkel(), () => ())
-   private def databaseSys( name: String )  : (Durable, () => Unit) = {
-      val dir  = new File( new File( sys.props( "user.home" ), "Desktop" ), "reaction" )
-      val db   = BerkeleyDB.open( dir, name )
-      val s    = Durable( db )
-      (s, () => s.close())
-   }
+   private def memorySys    : (evt.InMemory, () => Unit) = (evt.InMemory(), () => ())
+//   private def confluentSys : (ConfluentSkel, () => Unit) = (ConfluentSkel(), () => ())
+//   private def databaseSys( name: String )  : (Durable, () => Unit) = {
+//      val dir  = new File( new File( sys.props( "user.home" ), "Desktop" ), "reaction" )
+//      val db   = BerkeleyDB.open( dir, name )
+//      val s    = Durable( db )
+//      (s, () => s.close())
+//   }
 
    defer( args.toSeq.take( 2 ) match {
       case Seq( "--coll-memory" )      => collections( memorySys )
-      case Seq( "--coll-confluent" )   => collections( confluentSys )
-      case Seq( "--coll-database" )    => collections( databaseSys( "coll" ))
+//      case Seq( "--coll-confluent" )   => collections( confluentSys )
+//      case Seq( "--coll-database" )    => collections( databaseSys( "coll" ))
       case Seq( "--expr-memory" )      => expressions( memorySys )
-      case Seq( "--expr-confluent" )   => expressions( confluentSys )
-      case Seq( "--expr-database" )    => expressions( databaseSys( "expr" ))
+//      case Seq( "--expr-confluent" )   => expressions( confluentSys )
+//      case Seq( "--expr-database" )    => expressions( databaseSys( "expr" ))
       case _  => println( """
 Usages:
    --coll-memory
@@ -66,7 +67,7 @@ Usages:
    })
 
    object System {
-      def apply[ S <: Sys[ S ] with Cursor[ S ]]( implicit tx: S#Tx ) : System[ S ] = {
+      def apply[ S <: evt.Sys[ S ] with Cursor[ S ]]( implicit tx: S#Tx ) : System[ S ] = {
          val strings = Strings[ S ]
          val longs   = Longs[ S ]
          val spans   = Spans[ S ]( longs )
@@ -76,7 +77,7 @@ Usages:
       }
    }
 
-   class System[ S <: Sys[ S ] with Cursor[ S ]] private( val regions: Regions[ S ]) {
+   class System[ S <: evt.Sys[ S ] with Cursor[ S ]] private( val regions: Regions[ S ]) {
       import regions._
       import spans.spanOps
 
@@ -181,7 +182,7 @@ Usages:
 
    def defer( thunk: => Unit ) { EventQueue.invokeLater( new Runnable { def run() { thunk }})}
 
-   def expressions[ S <: Sys[ S ] with Cursor[ S ]]( tup: (S, () => Unit) ) {
+   def expressions[ S <: evt.Sys[ S ] with Cursor[ S ]]( tup: (S, () => Unit) ) {
       val (system, cleanUp) = tup
       val infra = system.step { implicit tx => System[ S ]}
       import infra._
@@ -351,7 +352,7 @@ Usages:
       f.setVisible( true )
    }
 
-   def collections[ S <: Sys[ S ] with Cursor[ S ]]( tup: (S, () => Unit) ) {
+   def collections[ S <: evt.Sys[ S ] with Cursor[ S ]]( tup: (S, () => Unit) ) {
       val (system, cleanUp) = tup
 
 //      val id = system.atomic { implicit tx => tx.newID() }

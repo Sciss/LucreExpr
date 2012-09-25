@@ -1,21 +1,22 @@
-package de.sciss.lucre.expr
+package de.sciss.lucre
+package expr
 
-import de.sciss.lucre.stm.{InMemory, Sys}
+import de.sciss.lucre.{event => evt}
 
 object ExtractorSuite extends App /* TODO: FunSuite */ {
    sealed trait Identified[ +S, +A ]
-   case class IsVariable[ S <: Sys[ S ], A ]( v: Expr.Var[ S, A ]) extends Identified[ S, A ]
+   case class IsVariable[ S <: evt.Sys[ S ], A ]( v: Expr.Var[ S, A ]) extends Identified[ S, A ]
    case class IsConstant[ A ]( value: A ) extends Identified[ Nothing, A ]
    case object IsOther extends Identified[ Nothing, Nothing ]
 
-   def identify[ S <: Sys[ S ], A ]( expr: Expr[ S, A ]) : Identified[ S, A ] = expr match {
+   def identify[ S <: evt.Sys[ S ], A ]( expr: Expr[ S, A ]) : Identified[ S, A ] = expr match {
       case Expr.Var( v )   => IsVariable( v )
       case Expr.Const( c ) => IsConstant( c )
       case _               => IsOther
    }
 
-   type S = InMemory
-   implicit val sys = InMemory()
+   type S = evt.InMemory
+   implicit val sys = evt.InMemory()
 
    val strings = Strings[ S ]
    import strings._

@@ -26,9 +26,8 @@
 package de.sciss.lucre
 package expr
 
-import stm.Sys
 import annotation.switch
-import event.Targets
+import de.sciss.lucre.{event => evt}
 
 //final case class Span[ S <: Sys[ S ]]( start: Expr[ S, Long ], stop: Expr[ S, Long ])
 final case class Span( start: Long, stop: Long ) {
@@ -103,11 +102,11 @@ final case class Span( start: Long, stop: Long ) {
 }
 
 object Spans {
-   def apply[ S <: Sys[ S ]]( longs: Longs[ S ]) /* ( implicit tx: S#Tx ) */ : Spans[ S ] =
+   def apply[ S <: evt.Sys[ S ]]( longs: Longs[ S ]) /* ( implicit tx: S#Tx ) */ : Spans[ S ] =
       new Spans[ S ]( longs )
 }
 
-final class Spans[ S <: Sys[ S ]] private( longs: Longs[ S ]) extends TypeOld[ S, Span ] {
+final class Spans[ S <: evt.Sys[ S ]] private( longs: Longs[ S ]) extends TypeOld[ S, Span ] {
    tpe =>
 
    val id = 100
@@ -121,7 +120,7 @@ final class Spans[ S <: Sys[ S ]] private( longs: Longs[ S ]) extends TypeOld[ S
    }
 
    private object LongExtensions extends TupleReader[ S, Long ] {
-      def readTuple( arity: Int, opID: Int, in: DataInput, access: S#Acc, targets: Targets[ S ])
+      def readTuple( arity: Int, opID: Int, in: DataInput, access: S#Acc, targets: evt.Targets[ S ])
                    ( implicit tx: S#Tx ) : Expr[ S, Long ] with event.Node[ S ] = {
          if( arity == 1 ) {
             UnaryLongOp( opID ).read( in, access, targets )
@@ -161,7 +160,7 @@ final class Spans[ S <: Sys[ S ]] private( longs: Longs[ S ]) extends TypeOld[ S
    private object Literal extends Tuple2Op[ Long, Long ] {
       def value( start: Long, stop: Long ) = new expr.Span( start, stop )
       val id = 0
-      def read( in: DataInput, access: S#Acc, targets: Targets[ S ])( implicit tx: S#Tx ) : Ex with event.Node[ S ] = {
+      def read( in: DataInput, access: S#Acc, targets: evt.Targets[ S ])( implicit tx: S#Tx ) : Ex with event.Node[ S ] = {
          val start   = longs.readExpr( in, access )
          val stop    = longs.readExpr( in, access )
          new Tuple2( tpe.id, this, targets, start, stop )
@@ -171,12 +170,12 @@ final class Spans[ S <: Sys[ S ]] private( longs: Longs[ S ]) extends TypeOld[ S
    }
 
    def Span[ T1, T2 ]( start: T1, stop: T2 )( implicit tx: S#Tx, startView: T1 => LongEx, stopView: T2 => LongEx ) : Ex = {
-      val targets = Targets[ S ]
+      val targets = evt.Targets[ S ]
       new Tuple2( tpe.id, Literal, targets, start, stop )
    }
 
    def readTuple( arity: Int, opID: Int, in: DataInput, access: S#Acc,
-                  targets: Targets[ S ])( implicit tx: S#Tx ) : Ex with event.Node[ S ] = {
+                  targets: evt.Targets[ S ])( implicit tx: S#Tx ) : Ex with event.Node[ S ] = {
       (arity /*: @switch */) match {
 //         case 1 => UnaryOp( opID ).read( in, access, targets )
          case 2 => {
@@ -197,9 +196,9 @@ final class Spans[ S <: Sys[ S ]] private( longs: Longs[ S ]) extends TypeOld[ S
 
       sealed trait Basic extends BinaryOp {
          final def apply( _1: Ex, _2: Ex )( implicit tx: S#Tx ) : Ex =
-            new Tuple2( tpe.id, this, Targets[ S ], _1, _2 )
+            new Tuple2( tpe.id, this, evt.Targets[ S ], _1, _2 )
 
-         def read( in: DataInput, access: S#Acc, targets: Targets[ S ])( implicit tx: S#Tx ) : Ex with event.Node[ S ] = {
+         def read( in: DataInput, access: S#Acc, targets: evt.Targets[ S ])( implicit tx: S#Tx ) : Ex with event.Node[ S ] = {
             val _1 = readExpr( in, access )
             val _2 = readExpr( in, access )
             new Tuple2( tpe.id, this, targets, _1, _2 )
@@ -239,9 +238,9 @@ final class Spans[ S <: Sys[ S ]] private( longs: Longs[ S ]) extends TypeOld[ S
 
       sealed trait Basic extends longs.Tuple1Op[ expr.Span ] {
          final def apply( _1: Ex )( implicit tx: S#Tx ) : LongEx =
-            new longs.Tuple1( tpe.id, this, Targets[ S ], _1 )
+            new longs.Tuple1( tpe.id, this, evt.Targets[ S ], _1 )
 
-         def read( in: DataInput, access: S#Acc, targets: Targets[ S ])( implicit tx: S#Tx ) : LongEx with event.Node[ S ] = {
+         def read( in: DataInput, access: S#Acc, targets: evt.Targets[ S ])( implicit tx: S#Tx ) : LongEx with event.Node[ S ] = {
             val _1 = readExpr( in, access )
             new longs.Tuple1( tpe.id, this, targets, _1 )
          }

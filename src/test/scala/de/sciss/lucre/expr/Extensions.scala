@@ -1,8 +1,8 @@
 package de.sciss.lucre
 package expr
 
-import stm.Sys
 import concurrent.stm.{InTxn, TMap}
+import de.sciss.lucre.{event => evt}
 
 //object Extensions {
 //   trait ReaderFactory[ S <: Sys[ S ], A ] {
@@ -10,7 +10,7 @@ import concurrent.stm.{InTxn, TMap}
 //   }
 //}
 
-trait Extensions[ S <: Sys[ S ], A ] {
+trait Extensions[ S <: evt.Sys[ S ], A ] {
    private val map = TMap.empty[ Int, TupleReader[ S, A ]]
 
    final def getExtension( tpe: Int )( implicit tx: InTxn ) : TupleReader[ S, A ] = {

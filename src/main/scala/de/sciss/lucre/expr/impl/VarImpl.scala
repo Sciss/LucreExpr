@@ -3,12 +3,12 @@ package expr
 package impl
 
 import stm.Sys
-import event.{Pull, Event, InvariantSelector, Generator, Change, StandaloneLike}
+import event.{Pull, Event, InvariantSelector, Change, impl => evti}
 //import de.sciss.lucre.LucreSTM._
 
-trait VarImpl[ S <: Sys[ S ], A ] extends Expr.Var[ S, A ]
-with StandaloneLike[ S, Change[ A ], Expr[ S, A ]] /* with LateBinding[ S, Change[ A ]] */
-with Generator[ S, Change[ A ], Expr[ S, A ]] with InvariantSelector[ S ] {
+trait VarImpl[ S <: event.Sys[ S ], A ] extends Expr.Var[ S, A ]
+with evti.StandaloneLike[ S, Change[ A ], Expr[ S, A ]] /* with LateBinding[ S, Change[ A ]] */
+with evti.Generator[ S, Change[ A ], Expr[ S, A ]] with InvariantSelector[ S ] {
    expr =>
 
    private type Ex = Expr[ S, A ]
@@ -40,7 +40,7 @@ with Generator[ S, Change[ A ], Expr[ S, A ]] with InvariantSelector[ S ] {
       val before = ref.get
       if( before != expr ) {
          val con = targets.nonEmpty
-         LucreSTM.logEvent( this.toString + " set " + expr + " (con = " + con + ")" )
+//         event.log( this.toString + " set " + expr + " (con = " + con + ")" )
          if( con ) before.changed -/-> this
          ref.set( expr )
          if( con ) {
@@ -54,7 +54,7 @@ with Generator[ S, Change[ A ], Expr[ S, A ]] with InvariantSelector[ S ] {
 
    final def transform( f: Ex => Ex )( implicit tx: S#Tx ) { set( f( get ))}
 
-   final def isFresh( implicit tx: S#Tx ) : Boolean = ref.isFresh
+//   final def isFresh( implicit tx: S#Tx ) : Boolean = ref.isFresh
 
 //      final def getFresh( implicit tx: S#Tx ) : Ex = ref.getFresh
 

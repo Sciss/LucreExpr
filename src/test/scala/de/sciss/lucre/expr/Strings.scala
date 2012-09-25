@@ -27,14 +27,14 @@ package de.sciss.lucre
 package expr
 
 import annotation.switch
-import event.Targets
-import stm.{Cursor, InMemory, Sys}
+import de.sciss.lucre.{event => evt}
+import stm.Cursor
 
 object Strings {
-   def apply[ S <: Sys[ S ]] : Strings[ S ] = new Strings[ S ]
+   def apply[ S <: evt.Sys[ S ]] : Strings[ S ] = new Strings[ S ]
 }
 
-final class Strings[ S <: Sys[ S ]] private() extends TypeOld[ S, String ] {
+final class Strings[ S <: evt.Sys[ S ]] private() extends TypeOld[ S, String ] {
    tpe =>
 
    val id = 8
@@ -56,7 +56,7 @@ final class Strings[ S <: Sys[ S ]] private() extends TypeOld[ S, String ] {
    }
 
    def readTuple( arity: Int, opID: Int, in: DataInput, access: S#Acc,
-                  targets: Targets[ S ])( implicit tx: S#Tx ) : Ex with event.Node[ S ] = {
+                  targets: evt.Targets[ S ])( implicit tx: S#Tx ) : Ex with event.Node[ S ] = {
       (arity: @switch) match {
          case 1 => UnaryOp(  opID ).read( in, access, targets )
          case 2 => BinaryOp( opID ).read( in, access, targets )
@@ -76,9 +76,9 @@ final class Strings[ S <: Sys[ S ]] private() extends TypeOld[ S, String ] {
 
       sealed trait Basic extends UnaryOp {
          final def apply( _1: Ex )( implicit tx: S#Tx ) : Ex =
-            new Tuple1( tpe.id, this, Targets[ S ], _1 )
+            new Tuple1( tpe.id, this, evt.Targets[ S ], _1 )
 
-         final def read( in: DataInput, access: S#Acc, targets: Targets[ S ])( implicit tx: S#Tx ) : Ex with event.Node[ S ] = {
+         final def read( in: DataInput, access: S#Acc, targets: evt.Targets[ S ])( implicit tx: S#Tx ) : Ex with event.Node[ S ] = {
             val _1 = readExpr( in, access )
             new Tuple1( tpe.id, this, targets, _1 )
          }
@@ -107,9 +107,9 @@ final class Strings[ S <: Sys[ S ]] private() extends TypeOld[ S, String ] {
 
       sealed trait Basic extends BinaryOp {
          final def apply( _1: Ex, _2: Ex )( implicit tx: S#Tx ) : Ex =
-            new Tuple2( tpe.id, this, Targets[ S ], _1, _2 )
+            new Tuple2( tpe.id, this, evt.Targets[ S ], _1, _2 )
 
-         final def read( in: DataInput, access: S#Acc, targets: Targets[ S ])( implicit tx: S#Tx ) : Ex with event.Node[ S ] = {
+         final def read( in: DataInput, access: S#Acc, targets: evt.Targets[ S ])( implicit tx: S#Tx ) : Ex with event.Node[ S ] = {
             val _1 = readExpr( in, access )
             val _2 = readExpr( in, access )
             new Tuple2( tpe.id, this, targets, _1, _2 )
@@ -131,10 +131,10 @@ final class Strings[ S <: Sys[ S ]] private() extends TypeOld[ S, String ] {
 }
 
 object StringsTests extends App {
-   new StringTests( InMemory() )
+   new StringTests( evt.InMemory() )
 }
 
-class StringTests[ S <: Sys[ S ] with Cursor[ S ]]( system: S ) {
+class StringTests[ S <: evt.Sys[ S ] with Cursor[ S ]]( system: S ) {
    val strings = Strings[ S ]
    import strings._
    import system.{ step => ◊ }

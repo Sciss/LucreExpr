@@ -3,24 +3,23 @@ package expr
 
 import collection.immutable.{IndexedSeq => IIdxSeq}
 import java.io.File
-import stm.{Cursor, Durable, InMemory, Sys}
 import stm.impl.{BerkeleyDB, ConfluentSkel}
-import event.{Compound, NodeSerializer, Targets, Decl}
+import de.sciss.lucre.{event => evt}
 
 object MutatingTest extends App {
-   private def memorySys    : (InMemory, () => Unit) = (InMemory(), () => ())
-   private def confluentSys : (ConfluentSkel, () => Unit) = (ConfluentSkel(), () => ())
-   private def databaseSys  : (Durable, () => Unit) = {
-      val dir  = new File( new File( sys.props( "user.home" ), "Desktop" ), "mutating" )
-      val db   = BerkeleyDB.open( dir )
-      val s    = Durable( db )
-      (s, () => s.close())
-   }
+   private def memorySys    : (evt.InMemory, () => Unit) = (evt.InMemory(), () => ())
+//   private def confluentSys : (ConfluentSkel, () => Unit) = (ConfluentSkel(), () => ())
+//   private def databaseSys  : (Durable, () => Unit) = {
+//      val dir  = new File( new File( sys.props( "user.home" ), "Desktop" ), "mutating" )
+//      val db   = BerkeleyDB.open( dir )
+//      val s    = Durable( db )
+//      (s, () => s.close())
+//   }
 
    args.toSeq.take( 2 ) match {
-      case Seq( "--memory" )      => run[ InMemory ]( memorySys )
-      case Seq( "--confluent" )   => run( confluentSys )
-      case Seq( "--database" )    => run( databaseSys )
+      case Seq( "--memory" )      => run[ evt.InMemory ]( memorySys )
+//      case Seq( "--confluent" )   => run( confluentSys )
+//      case Seq( "--database" )    => run( databaseSys )
       case _  => println( """
 Usage:
    --memory
@@ -29,7 +28,7 @@ Usage:
 """ )
    }
 
-   def run[ S <: Sys[ S ] with Cursor[ S ]]( setup: (S, () => Unit) ) {
+   def run[ S <: evt.Sys[ S ] with stm.Cursor[ S ]]( setup: (S, () => Unit) ) {
       val (system, cleanUp) = setup
       try {
          system.step { implicit tx =>
@@ -81,7 +80,7 @@ Usage:
       }
    }
 
-   def apply[ S <: Sys[ S ]]( implicit tx: S#Tx ) : MutatingTest[ S ] = {
+   def apply[ S <: evt.Sys[ S ]]( implicit tx: S#Tx ) : MutatingTest[ S ] = {
       val strings = Strings[ S ]
       val longs   = Longs[ S ]
       val spans   = Spans[ S ]( longs )
@@ -90,10 +89,10 @@ Usage:
    }
 }
 
-class MutatingTest[ S <: Sys[ S ]]( val regions: Regions[ S ]) {
+class MutatingTest[ S <: evt.Sys[ S ]]( val regions: Regions[ S ]) {
    import regions._
 
-   object Sorted extends Decl[ S, Sorted ] {
+   object Sorted extends evt.Decl[ S, Sorted ] {
       sealed trait Update
 //      type Update = Update
       sealed trait Collection extends Update { def l: Sorted; def region: EventRegion }
@@ -106,8 +105,8 @@ class MutatingTest[ S <: Sys[ S ]]( val regions: Regions[ S ]) {
 
       def apply[ A ]( unsorted: RegionList )( implicit tx: S#Tx ) : Sorted = new New( tx, unsorted )
 
-      val serializer : event.Reader[ S, Sorted ] = new NodeSerializer[ S, Sorted ] {
-         def read( in: DataInput, access: S#Acc, targets: Targets[ S ])( implicit tx: S#Tx ) : Sorted =
+      val serializer : event.Reader[ S, Sorted ] = new evt.NodeSerializer[ S, Sorted ] {
+         def read( in: DataInput, access: S#Acc, targets: evt.Targets[ S ])( implicit tx: S#Tx ) : Sorted =
             new Read( in, access, targets, tx )
       }
 
@@ -189,7 +188,7 @@ println( "ADD" )
       }
 
       private final class New( tx0: Tx, protected val unsorted: RegionList ) extends Impl {
-         protected val targets   = Targets[ S ]( tx0 )
+         protected val targets   = evt.Targets[ S ]( tx0 )
          protected val seq       = tx0.newVar[ RegionSeq ]( id, IIdxSeq.empty )
 
 //         // ---- constructor ----
@@ -202,14 +201,14 @@ println( "ADD" )
 //         ensureValidity()( tx0 )
       }
 
-      private final class Read( in: DataInput, access: S#Acc, protected val targets: Targets[ S ], tx0: S#Tx )
+      private final class Read( in: DataInput, access: S#Acc, protected val targets: evt.Targets[ S ], tx0: S#Tx )
       extends Impl {
          protected val unsorted  = RegionList.serializer.read( in, access )( tx0 )
          protected val seq       = tx0.readVar[ RegionSeq ]( id, in )
       }
    }
 
-   trait Sorted extends Compound[ S, Sorted.type, Sorted ] {
+   trait Sorted extends evt.Compound[ S, Sorted.type, Sorted ] {
       import Sorted._
       def collectionChanged:  Ev[ Collection ]
       def elementChanged:     Ev[ Element ]

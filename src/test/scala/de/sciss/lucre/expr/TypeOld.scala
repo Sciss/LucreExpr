@@ -26,7 +26,6 @@
 package de.sciss.lucre
 package expr
 
-import stm.Sys
 import event.{EventLikeSerializer, Targets, Pull, Observer}
 
 /**
@@ -34,7 +33,7 @@ import event.{EventLikeSerializer, Targets, Pull, Observer}
  * 0 = Byte, 1 = Short, 2 = Int, 3 = Long, 4 = Float, 5 = Double, 6 = Boolean, 7 = Char
  * 8 = String
  */
-trait TypeOld[ S <: Sys[ S ], A ] extends Extensions[ S, A ] with TupleReader[ S, A ] {
+trait TypeOld[ S <: event.Sys[ S ], A ] extends Extensions[ S, A ] with TupleReader[ S, A ] {
    tpe =>
 
    type Ex     = Expr[ S, A ]
@@ -83,7 +82,7 @@ trait TypeOld[ S <: Sys[ S ], A ] extends Extensions[ S, A ] with TupleReader[ S
 
    /* protected */ def readExpr( in: DataInput, access: S#Acc )( implicit tx: S#Tx ) : Ex = serializer.read( in, access )
 
-   private sealed trait ConstLike extends Expr.Const[ S, A ] {
+   private sealed trait ConstLike extends impl.ConstImpl[ S, A ] {
       final def react( fun: S#Tx => Change => Unit )
                        ( implicit tx: S#Tx ) : Observer[ S, Change, Ex ] = {
          Observer[ S, Change, Ex ]( serializer, fun )
@@ -137,7 +136,7 @@ trait TypeOld[ S <: Sys[ S ], A ] extends Extensions[ S, A ] with TupleReader[ S
    final /* protected */ class Tuple1[ T1 ]( typeID: Int, op: Tuple1Op[ T1 ],
                                        protected val targets: Targets[ S ],
                                        _1: Expr[ S, T1 ])
-   extends Basic with Expr.Node[ S, A ] {
+   extends Basic with impl.NodeImpl[ S, A ] {
 //      protected def op: Tuple1Op[ T1 ]
 //      protected def _1: Expr[ S, T1 ]
 
@@ -188,7 +187,7 @@ trait TypeOld[ S <: Sys[ S ], A ] extends Extensions[ S, A ] with TupleReader[ S
    final /* protected */  class Tuple2[ T1, T2 ]( typeID: Int, op: Tuple2Op[ T1, T2 ],
                                            protected val targets: Targets[ S ],
                                            _1: Expr[ S, T1 ], _2: Expr[ S, T2 ])
-   extends Basic with Expr.Node[ S, A ] {
+   extends Basic with impl.NodeImpl[ S, A ] {
 //      protected def op: Tuple1Op[ T1 ]
 //      protected def _1: Expr[ S, T1 ]
 

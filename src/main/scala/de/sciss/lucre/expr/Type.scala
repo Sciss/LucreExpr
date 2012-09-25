@@ -26,14 +26,14 @@
 package de.sciss.lucre
 package expr
 
-import event.{Pull, EventLikeSerializer, Targets, Observer}
-import stm.{Serializer, InMemory, Sys}
-import expr.Expr.Var
+import de.sciss.lucre.{event => evt}
+import stm.Serializer
+import evt.{impl => evti}
 
 trait Type[ A ] {
-   final protected type Ex[  S <: Sys[ S ]] = Expr[ S, A ]
-   final protected type ExN[ S <: Sys[ S ]] = Expr[ S, A ] with event.Node[ S ]
-   final protected type Change[ S <: Sys[ S ]] = event.Change[ A ]
+   final protected type Ex[  S <: stm.Sys[ S ]] = Expr[ S, A ]
+   final protected type ExN[ S <: stm.Sys[ S ]] = Expr[ S, A ] with event.Node[ S ]
+   final protected type Change[ S <: stm.Sys[ S ]] = event.Change[ A ]
 
    // ---- abstract ----
 
@@ -42,28 +42,28 @@ trait Type[ A ] {
 
    // ---- public ----
 
-   final def newConst[ S <: Sys[ S ]]( value: A ) : Expr.Const[ S, A ] = new Const( value )
+   final def newConst[ S <: evt.Sys[ S ]]( value: A ) : Expr.Const[ S, A ] = new Const( value )
 
-   final def newVar[ S <: Sys[ S ]]( init: Ex[ S ])( implicit tx: S#Tx ) : Expr.Var[ S, A ] = {
-      val targets = Targets.partial[ S ]
+   final def newVar[ S <: evt.Sys[ S ]]( init: Ex[ S ])( implicit tx: S#Tx ) : Expr.Var[ S, A ] = {
+      val targets = evt.Targets.partial[ S ]
       val ref     = tx.newPartialVar[ Ex[ S ]]( targets.id, init )
       new Var( ref, targets )
    }
 
-   final def newConfluentVar[ S <: Sys[ S ]]( init: Ex[ S ])( implicit tx: S#Tx ) : Expr.Var[ S, A ] = {
-      val targets = Targets[ S ]
+   final def newConfluentVar[ S <: evt.Sys[ S ]]( init: Ex[ S ])( implicit tx: S#Tx ) : Expr.Var[ S, A ] = {
+      val targets = evt.Targets[ S ]
       val ref     = tx.newVar[ Ex[ S ]]( targets.id, init )
       new Var( ref, targets )
    }
 
-   final def readConst[ S <: Sys[ S ]]( in: DataInput ) : Expr.Const[ S, A ] = {
+   final def readConst[ S <: evt.Sys[ S ]]( in: DataInput ) : Expr.Const[ S, A ] = {
       val cookie = in.readUnsignedByte()
       require( cookie == 3, "Unexpected cookie " + cookie ) // XXX TODO cookie should be available in lucre.event
       newConst[ S ]( readValue( in ))
    }
 
-   final def readVar[ S <: Sys[ S ]]( in: DataInput, access: S#Acc )( implicit tx: S#Tx ) : Expr.Var[ S, A ] = {
-      val targets = Targets.read[ S ]( in, access )
+   final def readVar[ S <: evt.Sys[ S ]]( in: DataInput, access: S#Acc )( implicit tx: S#Tx ) : Expr.Var[ S, A ] = {
+      val targets = evt.Targets.read[ S ]( in, access )
       val cookie  = in.readUnsignedByte
       require( cookie == 0, "Unexpected cookie " + cookie )
       val ref     = if( targets.isPartial ) {
@@ -74,27 +74,27 @@ trait Type[ A ] {
       new Var( ref, targets )
    }
 
-   final def readExpr[ S <: Sys[ S ]]( in: DataInput, access: S#Acc )( implicit tx: S#Tx ) : Ex[ S ] =
+   final def readExpr[ S <: evt.Sys[ S ]]( in: DataInput, access: S#Acc )( implicit tx: S#Tx ) : Ex[ S ] =
       serializer.read( in, access )
 
-   implicit final def serializer[ S <: Sys[ S ]] : EventLikeSerializer[ S, Ex[ S ]] =
+   implicit final def serializer[ S <: evt.Sys[ S ]] : evt.EventLikeSerializer[ S, Ex[ S ]] =
       anySer.asInstanceOf[ Ser[ S ]]
 
-   implicit final def varSerializer[ S <: Sys[ S ]] : Serializer[ S#Tx, S#Acc, Expr.Var[ S, A ]] =
+   implicit final def varSerializer[ S <: evt.Sys[ S ]] : Serializer[ S#Tx, S#Acc, Expr.Var[ S, A ]] =
       anyVarSer.asInstanceOf[ VarSer[ S ]]
 
-   final def change[ S <: Sys[ S ]]( before: A, now: A ) : Option[ Change[ S ]] = new event.Change( before, now ).toOption
+   final def change[ S <: stm.Sys[ S ]]( before: A, now: A ) : Option[ Change[ S ]] = new event.Change( before, now ).toOption
 
-   private val anySer      = new Ser[ InMemory ]
-   private val anyVarSer   = new VarSer[ InMemory ]
+   private val anySer      = new Ser[ event.InMemory ]
+   private val anyVarSer   = new VarSer[ event.InMemory ]
 
-   private final class VarSer[ S <: Sys[ S ]] extends Serializer[ S#Tx, S#Acc, Expr.Var[ S, A ]] {
+   private final class VarSer[ S <: evt.Sys[ S ]] extends Serializer[ S#Tx, S#Acc, Expr.Var[ S, A ]] {
       def write( v: Expr.Var[ S, A ], out: DataOutput ) { v.write( out )}
       def read( in: DataInput, access: S#Acc )( implicit tx: S#Tx ) : Expr.Var[ S, A ] = readVar[ S ]( in, access )
    }
 
-   private final class Ser[ S <: Sys[ S ]] extends EventLikeSerializer[ S, Ex[ S ]] {
-      def read( in: DataInput, access: S#Acc, targets: Targets[ S ])( implicit tx: S#Tx ) : ExN[ S ] = {
+   private final class Ser[ S <: evt.Sys[ S ]] extends evt.EventLikeSerializer[ S, Ex[ S ]] {
+      def read( in: DataInput, access: S#Acc, targets: evt.Targets[ S ])( implicit tx: S#Tx ) : ExN[ S ] = {
          // 0 = var, 1 = op
          (in.readUnsignedByte() /*: @switch */) match {
             case 0 =>
@@ -119,7 +119,7 @@ trait Type[ A ] {
       def readConstant( in: DataInput )( implicit tx: S#Tx ) : Ex[ S ] = newConst( readValue( in ))
    }
 
-   protected def readTuple[ S <: Sys[ S ]]( cookie: Int, in: DataInput, access: S#Acc, targets: Targets[ S ])
+   protected def readTuple[ S <: stm.Sys[ S ]]( cookie: Int, in: DataInput, access: S#Acc, targets: evt.Targets[ S ])
                                           ( implicit tx: S#Tx ) : ExN[ S ]
 
    /* protected */ sealed trait TupleOp /* extends event.Reader[ S, Ex ] */ {
@@ -132,13 +132,13 @@ trait Type[ A ] {
 
       def value( a: T1 ) : A
 
-      def toString[ S <: Sys[ S ]]( _1: Expr[ S, T1 ]) : String
+      def toString[ S <: evt.Sys[ S ]]( _1: Expr[ S, T1 ]) : String
    }
 
-   final /* protected */ class Tuple1[ S <: Sys[ S ], T1 ]( typeID: Int, op: Tuple1Op[ T1 ],
-                                       protected val targets: Targets[ S ],
+   final /* protected */ class Tuple1[ S <: evt.Sys[ S ], T1 ]( typeID: Int, op: Tuple1Op[ T1 ],
+                                       protected val targets: evt.Targets[ S ],
                                        _1: Expr[ S, T1 ])
-   extends Expr.Node[ S, A ] {
+   extends impl.NodeImpl[ S, A ] {
 //      protected def op: Tuple1Op[ T1 ]
 //      protected def _1: Expr[ S, T1 ]
 
@@ -168,7 +168,7 @@ trait Type[ A ] {
 //         }
 //      }
 
-      def pullUpdate( pull: Pull[ S ])( implicit tx: S#Tx ) : Option[ Change[ S ]] = {
+      def pullUpdate( pull: evt.Pull[ S ])( implicit tx: S#Tx ) : Option[ Change[ S ]] = {
          _1.changed.pullUpdate( pull ).flatMap { ach =>
             change( op.value( ach.before ), op.value( ach.now ))
          }
@@ -185,13 +185,13 @@ trait Type[ A ] {
 
       final protected def writeTypes( out: DataOutput ) {}
 
-      def toString[ S <: Sys[ S ]]( _1: Expr[ S, T1 ], _2: Expr[ S, T2 ]) : String
+      def toString[ S <: stm.Sys[ S ]]( _1: Expr[ S, T1 ], _2: Expr[ S, T2 ]) : String
    }
 
-   final /* protected */  class Tuple2[ S <: Sys[ S ], T1, T2 ]( typeID: Int, op: Tuple2Op[ T1, T2 ],
-                                           protected val targets: Targets[ S ],
+   final /* protected */  class Tuple2[ S <: evt.Sys[ S ], T1, T2 ]( typeID: Int, op: Tuple2Op[ T1, T2 ],
+                                           protected val targets: evt.Targets[ S ],
                                            _1: Expr[ S, T1 ], _2: Expr[ S, T2 ])
-   extends Expr.Node[ S, A ] {
+   extends impl.NodeImpl[ S, A ] {
 //      protected def op: Tuple1Op[ T1 ]
 //      protected def _1: Expr[ S, T1 ]
 
@@ -231,7 +231,7 @@ trait Type[ A ] {
 //         }
 //      }
 
-      def pullUpdate( pull: Pull[ S ])( implicit tx: S#Tx ) : Option[ Change[ S ]] = {
+      def pullUpdate( pull: evt.Pull[ S ])( implicit tx: S#Tx ) : Option[ Change[ S ]] = {
 //         val sources = pull.parents( select() )
          val _1c = _1.changed
          val _2c = _2.changed
@@ -265,10 +265,10 @@ trait Type[ A ] {
 
    // ---- private ----
 
-   private final case class Const[ S <: Sys[ S ]]( constValue: A ) extends Expr.Const[ S, A ] {
-      def react( fun: S#Tx => Change[ S ] => Unit )( implicit tx: S#Tx ) : Observer[ S, Change[ S ], Ex[ S ]] = {
+   private final case class Const[ S <: evt.Sys[ S ]]( constValue: A ) extends expr.impl.ConstImpl[ S, A ] {
+      def react( fun: S#Tx => Change[ S ] => Unit )( implicit tx: S#Tx ) : evt.Observer[ S, Change[ S ], Ex[ S ]] = {
 //         Observer( serializer[ S ], fun )
-         Observer.dummy
+         evt.Observer.dummy
       }
 
       protected def writeData( out: DataOutput ) {
@@ -276,7 +276,7 @@ trait Type[ A ] {
       }
    }
 
-   private final class Var[ S <: Sys[ S ]]( protected val ref: S#Var[ Ex[ S ]], protected val targets: Targets[ S ])
+   private final class Var[ S <: evt.Sys[ S ]]( protected val ref: S#Var[ Ex[ S ]], protected val targets: evt.Targets[ S ])
    extends impl.VarImpl[ S, A ] {
       def reader : event.Reader[ S, Ex[ S ]] = serializer[ S ]
    }

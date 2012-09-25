@@ -27,17 +27,11 @@ package de.sciss.lucre
 package expr
 
 import stm.{Disposable, Var => _Var, Sys}
-import event._
-import LucreSTM.logEvent
+import event.{impl => eimpl, EventLike, Dummy, Event, Change}
 
 object Expr {
-   trait Node[ S <: Sys[ S ], A ] extends Expr[ S, A ] // with Invariant[ S, Change[ A ]]
-   with StandaloneLike[ S, Change[ A ], Expr[ S, A ]] with InvariantSelector[ S ] {
-      final def changed: Event[ S, Change[ A ], Expr[ S, A ]] = this
-
-      final def disposeData()( implicit tx: S#Tx ) {}
-
-      override def toString() = "Expr" + id
+   trait Node[ S <: Sys[ S ], A ] extends Expr[ S, A ] with event.Node[ S ] {
+      def changed: Event[ S, Change[ A ], Expr[ S, A ]]
    }
 
    object Var {
@@ -56,7 +50,7 @@ object Expr {
          } else None
       }
    }
-   trait Const[ S <: Sys[ S ], A ] extends Expr[ S, A ] with event.Constant[ S ] {
+   trait Const[ S <: Sys[ S ], A ] extends Expr[ S, A ] {
       final def changed = Dummy[ S, Change[ A ], Expr[ S, A ]]
       protected def constValue : A
       final def value( implicit tx: S#Tx ) : A = constValue
