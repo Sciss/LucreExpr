@@ -119,7 +119,7 @@ trait Type[ A ] {
       def readConstant( in: DataInput )( implicit tx: S#Tx ) : Ex[ S ] = newConst( readValue( in ))
    }
 
-   protected def readTuple[ S <: stm.Sys[ S ]]( cookie: Int, in: DataInput, access: S#Acc, targets: evt.Targets[ S ])
+   protected def readTuple[ S <: evt.Sys[ S ]]( cookie: Int, in: DataInput, access: S#Acc, targets: evt.Targets[ S ])
                                           ( implicit tx: S#Tx ) : ExN[ S ]
 
    /* protected */ sealed trait TupleOp /* extends event.Reader[ S, Ex ] */ {
