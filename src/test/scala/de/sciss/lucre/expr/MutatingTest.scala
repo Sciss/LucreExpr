@@ -9,17 +9,20 @@ import de.sciss.lucre.{event => evt}
 object MutatingTest extends App {
    private def memorySys    : (evt.InMemory, () => Unit) = (evt.InMemory(), () => ())
 //   private def confluentSys : (ConfluentSkel, () => Unit) = (ConfluentSkel(), () => ())
-//   private def databaseSys  : (Durable, () => Unit) = {
-//      val dir  = new File( new File( sys.props( "user.home" ), "Desktop" ), "mutating" )
-//      val db   = BerkeleyDB.open( dir )
-//      val s    = Durable( db )
-//      (s, () => s.close())
-//   }
+   private def databaseSys  : (evt.Durable, () => Unit) = {
+      val dir  = new File( new File( sys.props( "user.home" ), "Desktop" ), "mutating" )
+      val db   = BerkeleyDB.open( dir )
+      val tmp  = File.createTempFile( "data", "tmp" )
+      tmp.delete()
+      val dbe  = BerkeleyDB.open( tmp )
+      val s    = evt.Durable( db, dbe )
+      (s, () => s.close())
+   }
 
    args.toSeq.take( 2 ) match {
       case Seq( "--memory" )      => run[ evt.InMemory ]( memorySys )
 //      case Seq( "--confluent" )   => run( confluentSys )
-//      case Seq( "--database" )    => run( databaseSys )
+      case Seq( "--database" )    => run( databaseSys )
       case _  => println( """
 Usage:
    --memory
