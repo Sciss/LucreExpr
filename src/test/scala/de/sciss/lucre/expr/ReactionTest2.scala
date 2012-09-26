@@ -40,20 +40,21 @@ import collection.mutable
 object ReactionTest2 extends App {
    private def memorySys    : (evt.InMemory, () => Unit) = (evt.InMemory(), () => ())
 //   private def confluentSys : (ConfluentSkel, () => Unit) = (ConfluentSkel(), () => ())
-//   private def databaseSys( name: String )  : (Durable, () => Unit) = {
-//      val dir  = new File( new File( sys.props( "user.home" ), "Desktop" ), "reaction" )
+   private def databaseSys( name: String )  : (evt.Durable, () => Unit) = {
+      val dir  = new File( new File( sys.props( "user.home" ), "Desktop" ), "reaction" )
 //      val db   = BerkeleyDB.open( dir, name )
-//      val s    = Durable( db )
-//      (s, () => s.close())
-//   }
+      val fact = BerkeleyDB.factory( dir )
+      val s    = evt.Durable( fact, name, name + "_evt" )
+      (s, () => s.close())
+   }
 
    defer( args.toSeq.take( 2 ) match {
       case Seq( "--coll-memory" )      => collections( memorySys )
 //      case Seq( "--coll-confluent" )   => collections( confluentSys )
-//      case Seq( "--coll-database" )    => collections( databaseSys( "coll" ))
+      case Seq( "--coll-database" )    => collections( databaseSys( "coll" ))
       case Seq( "--expr-memory" )      => expressions( memorySys )
 //      case Seq( "--expr-confluent" )   => expressions( confluentSys )
-//      case Seq( "--expr-database" )    => expressions( databaseSys( "expr" ))
+      case Seq( "--expr-database" )    => expressions( databaseSys( "expr" ))
       case _  => println( """
 Usages:
    --coll-memory
@@ -391,7 +392,8 @@ Usages:
             case RegionList.Removed( _, idx, r ) =>
                defer { tr.removeAt( idx )}
 
-            case RegionList.Element( _, changes ) =>
+            case r @ RegionList.Element( _, changes ) =>
+//println( "Changes " + changes.mkString( ", " ))
                val viewChanges = changes.map { c =>
                   val r = c.r
                   val ti = new TrackItem( /* r.id, */ r.name.value, r.span.value )

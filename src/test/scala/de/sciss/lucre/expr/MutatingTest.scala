@@ -11,11 +11,12 @@ object MutatingTest extends App {
 //   private def confluentSys : (ConfluentSkel, () => Unit) = (ConfluentSkel(), () => ())
    private def databaseSys  : (evt.Durable, () => Unit) = {
       val dir  = new File( new File( sys.props( "user.home" ), "Desktop" ), "mutating" )
-      val db   = BerkeleyDB.open( dir )
-      val tmp  = File.createTempFile( "data", "tmp" )
-      tmp.delete()
-      val dbe  = BerkeleyDB.open( tmp )
-      val s    = evt.Durable( db, dbe )
+//      val db   = BerkeleyDB.open( dir )
+      val fact = BerkeleyDB.factory( dir )
+//      val tmp  = File.createTempFile( "data", "tmp" )
+//      tmp.delete()
+//      val dbe  = BerkeleyDB.open( tmp )
+      val s    = evt.Durable( fact, "main", "event" )
       (s, () => s.close())
    }
 
@@ -66,7 +67,7 @@ Usage:
 
             println( "\nNow observed..." )
             sorted.changed.reactTx[ Sorted.Update ] { implicit tx => {
-               case Sorted.Added(   _, region ) => println( "Added: " + region.name.value + " @ " + region.span.value )
+               case Sorted.Added(   _, region ) => println( "Added:   " + region.name.value + " @ " + region.span.value )
                case Sorted.Removed( _, region ) => println( "Removed: " + region.name.value + " @ " + region.span.value )
                case Sorted.Element( _, chs )    => chs.foreach( ch => println( "Changed: " + ch ))
             }}
