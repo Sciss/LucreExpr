@@ -428,7 +428,8 @@ Usages:
       actionPane.add( button( "Add last" ) {
          system.step { implicit tx =>
             val coll = tx.refresh( csrPos, cv )
-            coll.add( newRegion() )
+            val r = newRegion()
+            coll.add( r )
          }
       })
       actionPane.add( button( "Remove first" ) {
@@ -442,7 +443,8 @@ Usages:
             val coll = tx.refresh( csrPos, cv )
             if( coll.size > 0 ) {
                val r    = coll.apply( rnd.nextInt( coll.size ))
-               r.name   = scramble( r.name.value )
+               val newName: strings.Ex = scramble( r.name.value )
+               r.name   = newName
             }
          }
       })
