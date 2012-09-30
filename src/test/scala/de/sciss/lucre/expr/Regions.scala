@@ -103,7 +103,7 @@ class Regions[ S <: evt.Sys[ S ]]( val strings: Strings[ S ], val longs: Longs[ 
 
       private sealed trait Impl extends RegionLike.Impl with EventRegion {
          final lazy val renamed  = name_#.changed.map( Renamed( this, _ ))
-         final lazy val moved    = span_#.changed.map( Moved( this, _ ))
+         final lazy val moved    = span_#.changed.map( Moved(   this, _ ))
 //            final lazy val changed  = (renamed | moved).map( ch => Changed( ch.r ))
 
 //            // a bit stupid, because the upper bound is Changed with Product
