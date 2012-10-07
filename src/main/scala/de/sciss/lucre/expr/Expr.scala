@@ -55,11 +55,12 @@ object Expr {
       protected def constValue : A
       final def value( implicit tx: S#Tx ) : A = constValue
       override def toString = constValue.toString
+      final def dispose()( implicit tx: S#Tx ) {}
    }
    def isConst( expr: Expr[ _, _ ]) : Boolean = expr.isInstanceOf[ Const[ _, _ ]]
 }
 
-trait Expr[ S <: Sys[ S ], A ] extends Writable {
+trait Expr[ S <: Sys[ S ], A ] extends Writable with Disposable[ S#Tx ] {
    def changed: EventLike[ S, Change[ A ], Expr[ S, A ]]
    def value( implicit tx: S#Tx ) : A
 
