@@ -174,7 +174,8 @@ object LinkedListImpl {
    extends Impl[ S, Elem, U ] {
       list =>
 
-      final def elementChanged : Event[ S, LinkedList.Element[ S, Elem, U ], LinkedList[ S, Elem, U ]] = ElementEvent
+      final protected def elementChanged : EventLike[ S, LinkedList.Update[ S, Elem, U ], LinkedList[ S, Elem, U ]] =
+         ElementEvent
 
       final protected def registerElement( elem: Elem )( implicit tx: S#Tx ) {
          eventView( elem ) ---> ElementEvent
@@ -186,8 +187,8 @@ object LinkedListImpl {
 
 
       private object ElementEvent
-      extends eimpl.EventImpl[ S, LinkedList.Element[ S, Elem, U ], LinkedList[ S, Elem, U ]]
-      with evt.InvariantEvent[ S, LinkedList.Element[ S, Elem, U ], LinkedList[ S, Elem, U ]] {
+      extends eimpl.EventImpl[ S, LinkedList.Update[ S, Elem, U ], LinkedList[ S, Elem, U ]]
+      with evt.InvariantEvent[ S, LinkedList.Update[ S, Elem, U ], LinkedList[ S, Elem, U ]] {
          protected def reader : evt.Reader[ S, LinkedList[ S, Elem, U ]] = activeSerializer( eventView )
          def slot: Int = 2
          def node: LinkedList[ S, Elem, U ] = list
@@ -195,13 +196,14 @@ object LinkedListImpl {
          def connect()( implicit tx: S#Tx ) {}
          def disconnect()( implicit tx: S#Tx ) {}
 
-         def pullUpdate( pull: evt.Pull[ S ])( implicit tx: S#Tx ) : Option[ LinkedList.Element[ S, Elem, U ]] = {
-            val changes: IIdxSeq[ (Elem, U)] = pull.parents( this ).flatMap( sel => {
+         def pullUpdate( pull: evt.Pull[ S ])( implicit tx: S#Tx ) : Option[ LinkedList.Update[ S, Elem, U ]] = {
+            val changes: IIdxSeq[ LinkedList.Element[ S, Elem, U ]] = pull.parents( this ).flatMap( sel => {
                val evt = sel.devirtualize[ U, Elem ]( elemSerializer )
-               evt.pullUpdate( pull ).map( evt.node -> _ ) // u => LinkedList.Element( list, elem, u ))
+               val opt: Option[ LinkedList.Element[ S, Elem, U ]] = evt.pullUpdate( pull ).map( LinkedList.Element( evt.node, _ )) // u => LinkedList.Element( list, elem, u ))
+               opt
             })( breakOut )
 
-            if( changes.isEmpty ) None else Some( LinkedList.Element( list, changes ))
+            if( changes.isEmpty ) None else Some( LinkedList.Update( list, changes ))
          }
       }
 
@@ -209,14 +211,15 @@ object LinkedListImpl {
 
       final /* private[event] */ def select( slot: Int, invariant: Boolean ) : Event[ S, Any, Any ] = (slot: @switch) match {
          case 1 => CollectionEvent
-         case 2 => elementChanged
+         case 2 => ElementEvent // elementChanged
       }
    }
 
    private abstract class PassiveImpl[ S <: evt.Sys[ S ], Elem ]( implicit protected val elemSerializer: Serializer[ S#Tx, S#Acc, Elem ])
    extends Impl[ S, Elem, Unit ] {
       // Dummy.apply is a cheap method now
-      final def elementChanged : EventLike[ S, LinkedList.Element[ S, Elem, Unit ], LinkedList[ S, Elem, Unit ]] = evt.Dummy.apply
+      final protected def elementChanged : EventLike[ S, LinkedList.Update[ S, Elem, Unit ], LinkedList[ S, Elem, Unit ]] =
+         evt.Dummy.apply
 
       final protected def registerElement(   elem: Elem )( implicit tx: S#Tx ) {}
       final protected def unregisterElement( elem: Elem )( implicit tx: S#Tx ) {}
@@ -271,10 +274,10 @@ object LinkedListImpl {
       protected def reader: evt.Reader[ S, LinkedList[ S, Elem, U ]]
 
       protected object CollectionEvent
-      extends eimpl.TriggerImpl[ S, LinkedList.Collection[ S, Elem, U ], LinkedList[ S, Elem, U ]]
-      with eimpl.EventImpl[ S, LinkedList.Collection[ S, Elem, U ], LinkedList[ S, Elem, U ]]
-      with evt.InvariantEvent[ S, LinkedList.Collection[ S, Elem, U ], LinkedList[ S, Elem, U ]]
-      with eimpl.Root[ S, LinkedList.Collection[ S, Elem, U ]]
+      extends eimpl.TriggerImpl[ S, LinkedList.Update[ S, Elem, U ], LinkedList[ S, Elem, U ]]
+      with eimpl.EventImpl[ S, LinkedList.Update[ S, Elem, U ], LinkedList[ S, Elem, U ]]
+      with evt.InvariantEvent[ S, LinkedList.Update[ S, Elem, U ], LinkedList[ S, Elem, U ]]
+      with eimpl.Root[ S, LinkedList.Update[ S, Elem, U ]]
       {
          protected def reader = list.reader
          def slot: Int = 1
@@ -301,9 +304,16 @@ object LinkedListImpl {
          }
 
          def pullUpdate( pull: evt.Pull[ S ])( implicit tx: S#Tx ) : Option[ LinkedList.Update[ S, Elem, U ]] = {
-            if(   CollectionEvent.isSource( pull )) CollectionEvent.pullUpdate( pull )
-            else if( elementChanged.isSource( pull )) elementChanged.pullUpdate(    pull )
-            else None
+            val collOpt = if( CollectionEvent.isSource( pull )) CollectionEvent.pullUpdate( pull ) else None
+            val elemOpt = if( elementChanged.isSource(  pull )) elementChanged.pullUpdate(  pull ) else None
+
+            (collOpt, elemOpt) match {
+               case (coll @ Some( _ ), None)       => coll
+               case (None, elem @ Some( _ ))       => elem
+               case (Some( LinkedList.Update( _, coll )), Some( LinkedList.Update( _, elem ))) =>
+                  Some( LinkedList.Update( list, coll ++ elem ))
+               case _                              => None
+            }
          }
 
          def react[ A1 >: LinkedList.Update[ S, Elem, U ]]( fun: A1 => Unit )
@@ -381,11 +391,11 @@ object LinkedListImpl {
       }
 
       private def fireAdded( idx: Int, elem: Elem )( implicit tx: S#Tx ) {
-         CollectionEvent( LinkedList.Added( list, idx, elem ))
+         CollectionEvent( LinkedList.Update( list, IIdxSeq( LinkedList.Added( idx, elem ))))
       }
 
       private def fireRemoved( idx: Int, elem: Elem )( implicit tx: S#Tx ) {
-         CollectionEvent( LinkedList.Removed( list, idx, elem ))
+         CollectionEvent( LinkedList.Update( list, IIdxSeq( LinkedList.Removed( idx, elem ))))
       }
 
       final def remove( elem: Elem )( implicit tx: S#Tx ) : Boolean = {
@@ -543,9 +553,9 @@ object LinkedListImpl {
 
       final def iterator( implicit tx: S#Tx ) : Iterator[ S#Tx, Elem ] = new Iter( headRef.get )
 
-      final def collectionChanged : Event[ S, LinkedList.Collection[ S, Elem, U ], LinkedList[ S, Elem, U ]] = CollectionEvent
-//      def elementChanged    : Event[ S, LinkedList.Element[    S, Elem, U ], LinkedList[ S, Elem, U ]]
-      final def changed           : Event[ S, LinkedList.Update[     S, Elem, U ], LinkedList[ S, Elem, U ]] = ChangeEvent
+//      final def collectionChanged : Event[ S, LinkedList.Collection[ S, Elem, U ], LinkedList[ S, Elem, U ]] = CollectionEvent
+      protected def elementChanged : EventLike[ S, LinkedList.Update[ S, Elem, U ], LinkedList[ S, Elem, U ]]
+      final def changed : EventLike[ S, LinkedList.Update[ S, Elem, U ], LinkedList[ S, Elem, U ]] = ChangeEvent
 
       final def debugList()( implicit tx: S#Tx ) : List[ Elem ] = iterator.toList
    }

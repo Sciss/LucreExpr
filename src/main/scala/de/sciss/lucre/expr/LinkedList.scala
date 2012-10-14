@@ -36,21 +36,25 @@ import collection.immutable.{IndexedSeq => IIdxSeq}
 object LinkedList {
    import de.sciss.lucre.expr.{Expr => Ex}
 
-   sealed trait Update[ S <: stm.Sys[ S ], Elem, U ] {
-      def list: LinkedList[ S, Elem, U ]
-   }
-   sealed trait Collection[ S <: stm.Sys[ S ], Elem, U ] extends Update[ S, Elem, U ] {
+   final case class Update[ S <: stm.Sys[ S ], Elem, U ]( list: LinkedList[ S, Elem, U ], changes: IIdxSeq[ Change[ S, Elem, U ]])
+
+   sealed trait Change[ S <: stm.Sys[ S ], Elem, +U ]
+
+   sealed trait Collection[ S <: stm.Sys[ S ], Elem ] extends Change[ S, Elem, Nothing ] {
       def index: Int
       def elem: Elem
    }
-   final case class Added[ S <: stm.Sys[ S ], Elem, U ]( list: LinkedList[ S, Elem, U ], index: Int, elem: Elem )
-   extends Collection[ S, Elem, U ]
+   final case class Added[ S <: stm.Sys[ S ], Elem ]( /* list: LinkedList[ S, Elem, U ], */ index: Int, elem: Elem )
+   extends Collection[ S, Elem ]
 
-   final case class Removed[ S <: stm.Sys[ S ], Elem, U ]( list: LinkedList[ S, Elem, U ], index: Int, elem: Elem )
-   extends Collection[ S, Elem, U ]
+   final case class Removed[ S <: stm.Sys[ S ], Elem ]( /* list: LinkedList[ S, Elem, U ], */ index: Int, elem: Elem )
+   extends Collection[ S, Elem ]
 
-   final case class Element[ S <: stm.Sys[ S ], Elem, U ]( list: LinkedList[ S, Elem, U ], updates: IIdxSeq[ (Elem, U) ])
-   extends Update[ S, Elem, U ]
+//   final case class Element[ S <: stm.Sys[ S ], Elem, U ]( /* list: LinkedList[ S, Elem, U ], */ updates: IIdxSeq[ (Elem, U) ])
+//   extends Update[ S, Elem, U ]
+
+   final case class Element[ S <: stm.Sys[ S ], Elem, U ]( elem: Elem, elemUpdate: U )
+   extends Change[ S, Elem, U ]
 
    object Modifiable {
       /**
@@ -175,9 +179,9 @@ trait LinkedList[ S <: stm.Sys[ S ], Elem, U ] extends evt.Node[ S ] {
     */
    def indexOf( elem: Elem )( implicit tx: S#Tx ) : Int
    
-   def collectionChanged:  Event[     S, LinkedList.Collection[ S, Elem, U ], LinkedList[ S, Elem, U ]]
-   def elementChanged:     EventLike[ S, LinkedList.Element[    S, Elem, U ], LinkedList[ S, Elem, U ]]
-   def changed:            Event[     S, LinkedList.Update[     S, Elem, U ], LinkedList[ S, Elem, U ]]
+//   def collectionChanged:  Event[     S, LinkedList.Collection[ S, Elem, U ], LinkedList[ S, Elem, U ]]
+//   def elementChanged:     EventLike[ S, LinkedList.Element[    S, Elem, U ], LinkedList[ S, Elem, U ]]
+   def changed: EventLike[ S, LinkedList.Update[ S, Elem, U ], LinkedList[ S, Elem, U ]]
 
    def debugList()( implicit tx: S#Tx ) : List[ Elem ]
 }
