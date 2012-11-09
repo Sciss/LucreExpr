@@ -14,6 +14,8 @@ LucreSTM builds with sbt 0.12 against Scala 2.9.2. It depends on [LucreData-Core
 
 The following dependency is necessary:
 
+    resolvers += "Oracle Repository" at "http://download.oracle.com/maven"
+    
     "de.sciss" %% "lucreexpr" % "1.4.+"
 
 ## creating an IntelliJ IDEA project
