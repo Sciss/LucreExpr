@@ -1,6 +1,6 @@
 name := "LucreExpr"
 
-version := "1.4.0"
+version := "1.6.0"
 
 organization := "de.sciss"
 
@@ -10,13 +10,13 @@ homepage := Some( url( "https://github.com/Sciss/LucreExpr" ))
 
 licenses := Seq( "GPL v2+" -> url( "http://www.gnu.org/licenses/gpl-2.0.txt" ))
 
-scalaVersion := "2.9.2"
+scalaVersion := "2.10.0"
 
-resolvers += "Oracle Repository" at "http://download.oracle.com/maven"  // required for sleepycat
+crossScalaVersions := Seq( "2.10.0", "2.9.2" )
 
 libraryDependencies ++= Seq(
-   "de.sciss" %% "lucredata-core" % "1.4.+",
-   "de.sciss" %% "lucreevent" % "1.4.+"
+   "de.sciss" %% "lucredata-core" % "1.6.+",
+   "de.sciss" %% "lucreevent" % "1.6.+"
 )
 
 retrieveManaged := true
