@@ -1,3 +1,5 @@
+__Note:__ LucreExpr is now obsolete; instead use sub-project lucreevent-expr in project [LucreEvent](https://github.com/Sciss/LucreEvent)!
+
 # LucreExpr
 
 ## statement
